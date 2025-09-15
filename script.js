@@ -64,7 +64,14 @@ function cargarClientesGoogleSheets() {
         clearTimeout(timeout);
     };
     
-    document.body.appendChild(script);
+    // Agregar script de forma segura
+    const container = document.body || document.head || document.documentElement;
+    if (container) {
+        container.appendChild(script);
+    } else {
+        console.error("No se pudo encontrar un contenedor para el script");
+        actualizarEstadoGoogleSheets('❌ Error del DOM - Recarga la página', 'error');
+    }
 }
 
 // Callback para recibir datos de Google Sheets
@@ -79,7 +86,15 @@ function recibirClientesGoogleSheets(clientes) {
         
         // Mostrar botón de recarga forzada
         const btnForzar = document.getElementById('btnForzarRecarga');
-        if (btnForzar) btnForzar.style.display = 'block';
+        if (btnForzar) {
+            btnForzar.style.display = 'block';
+            
+            // Auto-ejecutar recarga forzada después de 2 segundos
+            console.log("🔥 Auto-ejecutando recarga forzada en 2 segundos...");
+            setTimeout(() => {
+                forzarRecargaGoogleSheets();
+            }, 2000);
+        }
         
     } else if (clientes && clientes.length === 3) {
         console.log("✅ VERSIÓN 8 CONFIRMADA: 3 clientes recibidos correctamente");
@@ -172,19 +187,40 @@ function forzarRecargaGoogleSheets() {
     const btnForzar = document.getElementById('btnForzarRecarga');
     if (btnForzar) btnForzar.style.display = 'none';
     
+    // Eliminar scripts anteriores
+    const scriptsAnteriores = document.querySelectorAll('[id^="google-script"]');
+    scriptsAnteriores.forEach(script => script.remove());
+    
     // Esperar un poco y recargar con parámetros anti-cache extremos
     setTimeout(() => {
         const superCacheBuster = Date.now() + Math.random().toString(36).substr(2, 15);
         const forceReload = "FORCE_V8_" + new Date().getTime();
+        const sessionId = Math.random().toString(36).substr(2, 10);
         
         const script = document.createElement("script");
-        script.id = "google-script-force";
-        script.src = GOOGLE_SCRIPT_URL + `?callback=recibirClientesGoogleSheets&force=${forceReload}&nocache=${superCacheBuster}&v8=true&bypass=1`;
+        script.id = "google-script-force-" + sessionId;
+        
+        // URL con múltiples parámetros anti-cache
+        script.src = GOOGLE_SCRIPT_URL + 
+            `?callback=recibirClientesGoogleSheets` +
+            `&force=${forceReload}` +
+            `&nocache=${superCacheBuster}` +
+            `&v8=true` +
+            `&bypass=1` +
+            `&reload=true` +
+            `&session=${sessionId}` +
+            `&timestamp=${Date.now()}`;
         
         console.log("🚀 URL de recarga forzada:", script.src);
-        actualizarEstadoGoogleSheets('🔥 Forzando recarga desde servidor...', 'loading');
+        actualizarEstadoGoogleSheets('🔥 Forzando recarga desde servidor (Bypass total)...', 'loading');
         
-        document.body.appendChild(script);
+        // Agregar script de forma segura
+        const container = document.body || document.head || document.documentElement;
+        if (container) {
+            container.appendChild(script);
+        } else {
+            console.error("No se pudo encontrar un contenedor para el script");
+        }
     }, 100);
 }
 
