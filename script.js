@@ -73,6 +73,13 @@ function recibirClientesGoogleSheets(clientes) {
     
     clientesGoogleSheets = clientes;
     actualizarEstadoGoogleSheets(`✅ ${clientes.length} clientes cargados correctamente`, 'success');
+    
+    // Si hay texto en el input de nombre, activar el filtro automáticamente
+    const inputNombre = document.getElementById('nombreInput');
+    if (inputNombre && inputNombre.value.trim().length > 0) {
+        console.log("🔄 Actualizando filtro automáticamente con clientes cargados");
+        filtrarNombres();
+    }
 }
 
 // Función alternativa para compatibilidad con Google Apps Script
@@ -134,6 +141,8 @@ function filtrarNombres() {
     const filtro = input.value.toLowerCase();
     const contenedorFiltros = document.getElementById('nombresFiltrados');
     
+    console.log(`🔍 Filtrando nombres con: "${filtro}" - Clientes disponibles: ${clientesGoogleSheets.length}`);
+    
     if (filtro.length === 0) {
         contenedorFiltros.style.display = 'none';
         clienteSeleccionado = null;
@@ -141,9 +150,11 @@ function filtrarNombres() {
         return;
     }
     
-    // Si no hay clientes cargados, usar datos de respaldo
+    // Si no hay clientes cargados, mostrar mensaje y intentar cargar
     if (clientesGoogleSheets.length === 0) {
-        mostrarNotificacion('⚠️ Cargando clientes de Google Sheets...', 'info');
+        contenedorFiltros.innerHTML = '<div class="filter-item" style="background: #fff3cd; color: #856404;">🔄 Cargando clientes desde Google Sheets...</div>';
+        contenedorFiltros.style.display = 'block';
+        console.log("⚠️ No hay clientes cargados, intentando cargar desde Google Sheets");
         cargarClientesGoogleSheets();
         return;
     }
@@ -152,6 +163,8 @@ function filtrarNombres() {
     const clientesFiltrados = clientesGoogleSheets.filter(cliente => 
         (cliente.NombreCliente || '').toLowerCase().startsWith(filtro)
     ).slice(0, 10); // Limitar a 10 resultados
+    
+    console.log(`📋 Clientes que coinciden con "${filtro}":`, clientesFiltrados.map(c => c.NombreCliente));
     
     if (clientesFiltrados.length > 0) {
         contenedorFiltros.innerHTML = '';
