@@ -23,8 +23,8 @@ window.login = function() {
 
   signInWithEmailAndPassword(auth, email, password)
     .then((userCredential) => {
-      document.getElementById("login-form").style.display = "none";
-      document.getElementById("contenido").style.display = "block";
+      // Usuario autenticado exitosamente, redirigir a la aplicación principal
+      window.location.href = 'index.html';
     })
     .catch((error) => {
       alert("Error: " + error.message);
