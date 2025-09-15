@@ -1,5 +1,5 @@
-// Configuración de Google Sheets (URL pública actualizada)
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw4ofPJnyBmquH45UTa_hQJ5513kh1EbaB0O1IpHZZ01mmp0RskqFrC_DeRl8tWDKES/exec";
+// Configuración de Google Sheets (URL pública actualizada - Versión 4)
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZjJw8t7H5KpmmGiKcFdKRnzRqXlvz7P3Q6U0vlTMqZa7GSMhzOpMM8vsCWuJi2LEA/exec";
 
 // Variables globales
 let clientesGoogleSheets = []; // Datos reales de Google Sheets
@@ -38,7 +38,7 @@ function cargarClientesGoogleSheets() {
     
     const script = document.createElement("script");
     script.id = "google-script";
-    script.src = GOOGLE_SCRIPT_URL + "?callback=mostrarClientes&_=" + Date.now();
+    script.src = GOOGLE_SCRIPT_URL + "?callback=recibirClientesGoogleSheets&_=" + Date.now();
     
     // Timeout para detectar errores de conexión
     const timeout = setTimeout(() => {
