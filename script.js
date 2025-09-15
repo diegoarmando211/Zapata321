@@ -1,13 +1,24 @@
-// Configuración del archivo JSON local
+// ===================================
+// SISTEMA DE CERTIFICADOS DIGITALES
+// ===================================
+
+// Configuración
 const CLIENTES_JSON_URL = './clientes.json';
 
 // Variables globales
-let clientesGoogleSheets = []; // Mantenemos el nombre para compatibilidad
+let clientes = [];
 let imagenCapturadaBlob = null;
-let clienteSeleccionado = null; // Cliente seleccionado con su teléfono
+let clienteSeleccionado = null;
 
-// Inicializar la aplicación
+// ===================================
+// INICIALIZACIÓN
+// ===================================
+
 document.addEventListener('DOMContentLoaded', function() {
+    inicializarApp();
+});
+
+async function inicializarApp() {
     // Establecer fecha actual
     const hoy = new Date().toISOString().split('T')[0];
     document.getElementById('fechaInput').value = hoy;
@@ -15,20 +26,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mostrar hora de generación
     mostrarHoraGeneracion();
     
-    // Cargar datos desde JSON local
-    cargarClientesDesdeJSON();
+    // Cargar clientes
+    await cargarClientes();
     
     // Actualizar la hoja inicialmente
     actualizarHoja();
-});
+}
 
-// Cargar clientes desde archivo JSON local
-async function cargarClientesDesdeJSON() {
+// ===================================
+// CARGA DE DATOS
+// ===================================
+
+async function cargarClientes() {
     try {
-        // Mostrar estado de carga
-        actualizarEstadoClientes('🔄 Cargando clientes desde archivo JSON...', 'loading');
+        actualizarEstado('🔄 Cargando clientes...', 'loading');
         
-        // Fetch del archivo JSON con cache buster para actualizaciones
         const response = await fetch(CLIENTES_JSON_URL + '?v=' + Date.now());
         
         if (!response.ok) {
@@ -41,67 +53,44 @@ async function cargarClientesDesdeJSON() {
             throw new Error('Formato de JSON inválido');
         }
         
-        console.log("✅ Datos cargados desde JSON local:", data.clientes);
+        clientes = data.clientes;
+        actualizarEstado(`✅ ${clientes.length} clientes cargados correctamente`, 'success');
         
-        // Procesar los datos (mantener compatibilidad con el código existente)
-        clientesGoogleSheets = data.clientes;
-        
-        actualizarEstadoClientes(`✅ ${data.clientes.length} clientes cargados desde JSON`, 'success');
-        
-        // Si hay texto en el input de nombre, activar el filtro automáticamente
+        // Si hay texto en el input, activar filtro
         const inputNombre = document.getElementById('nombreInput');
         if (inputNombre && inputNombre.value.trim().length > 0) {
-            console.log("🔄 Actualizando filtro automáticamente con clientes cargados");
             filtrarNombres();
         }
         
     } catch (error) {
-        console.error('❌ Error al cargar clientes desde JSON:', error);
-        actualizarEstadoClientes('❌ Error al cargar archivo de clientes', 'error');
-        clientesGoogleSheets = [];
+        console.error('Error al cargar clientes:', error);
+        actualizarEstado('❌ Error al cargar clientes', 'error');
+        clientes = [];
     }
 }
 
-// Actualizar estado visual de la conexión con el sistema de clientes
-function actualizarEstadoClientes(mensaje, tipo) {
+// ===================================
+// INTERFAZ DE USUARIO
+// ===================================
+
+function actualizarEstado(mensaje, tipo) {
     const elemento = document.getElementById('estadoGoogleSheets');
     if (!elemento) return;
     
     elemento.textContent = mensaje;
-    
-    // Remover clases anteriores
     elemento.className = 'form-group';
     
-    // Aplicar estilos según el tipo
-    switch(tipo) {
-        case 'loading':
-            elemento.style.background = '#e3f2fd';
-            elemento.style.color = '#1976d2';
-            elemento.style.border = '2px solid #bbdefb';
-            break;
-        case 'success':
-            elemento.style.background = '#e8f5e8';
-            elemento.style.color = '#2e7d32';
-            elemento.style.border = '2px solid #c8e6c9';
-            break;
-        case 'error':
-            elemento.style.background = '#ffebee';
-            elemento.style.color = '#c62828';
-            elemento.style.border = '2px solid #ffcdd2';
-            break;
-        case 'warning':
-            elemento.style.background = '#fff8e1';
-            elemento.style.color = '#f57c00';
-            elemento.style.border = '2px solid #ffecb3';
-            break;
-        default:
-            elemento.style.background = '#f0f2f5';
-            elemento.style.color = '#666';
-            elemento.style.border = '2px solid #ddd';
-    }
+    const estilos = {
+        loading: { background: '#e3f2fd', color: '#1976d2', border: '2px solid #bbdefb' },
+        success: { background: '#e8f5e8', color: '#2e7d32', border: '2px solid #c8e6c9' },
+        error: { background: '#ffebee', color: '#c62828', border: '2px solid #ffcdd2' },
+        warning: { background: '#fff8e1', color: '#f57c00', border: '2px solid #ffecb3' }
+    };
+    
+    const estilo = estilos[tipo] || { background: '#f0f2f5', color: '#666', border: '2px solid #ddd' };
+    Object.assign(elemento.style, estilo);
 }
 
-// Función para mostrar la hora actual
 function mostrarHoraGeneracion() {
     const ahora = new Date();
     const fecha = ahora.toLocaleDateString('es-ES');
@@ -109,13 +98,14 @@ function mostrarHoraGeneracion() {
     document.getElementById('horaGeneracion').textContent = `${fecha} a las ${hora}`;
 }
 
-// Filtrar nombres mientras el usuario escribe (usando datos de Google Sheets)
+// ===================================
+// FILTRADO DE CLIENTES
+// ===================================
+
 function filtrarNombres() {
     const input = document.getElementById('nombreInput');
     const filtro = input.value.toLowerCase();
     const contenedorFiltros = document.getElementById('nombresFiltrados');
-    
-    console.log(`🔍 Filtrando nombres con: "${filtro}" - Clientes disponibles: ${clientesGoogleSheets.length}`);
     
     if (filtro.length === 0) {
         contenedorFiltros.style.display = 'none';
@@ -124,21 +114,16 @@ function filtrarNombres() {
         return;
     }
     
-    // Si no hay clientes cargados, mostrar mensaje y intentar cargar
-    if (clientesGoogleSheets.length === 0) {
-        contenedorFiltros.innerHTML = '<div class="filter-item" style="background: #fff3cd; color: #856404;">🔄 Cargando clientes desde Google Sheets...</div>';
+    if (clientes.length === 0) {
+        contenedorFiltros.innerHTML = '<div class="filter-item" style="background: #fff3cd; color: #856404;">🔄 Cargando clientes...</div>';
         contenedorFiltros.style.display = 'block';
-        console.log("⚠️ No hay clientes cargados, intentando cargar desde JSON");
-        cargarClientesDesdeJSON();
+        cargarClientes();
         return;
     }
     
-    // Filtrar clientes que empiecen con la letra escrita
-    const clientesFiltrados = clientesGoogleSheets.filter(cliente => 
+    const clientesFiltrados = clientes.filter(cliente => 
         (cliente.NombreCliente || '').toLowerCase().startsWith(filtro)
-    ).slice(0, 10); // Limitar a 10 resultados
-    
-    console.log(`📋 Clientes que coinciden con "${filtro}":`, clientesFiltrados.map(c => c.NombreCliente));
+    ).slice(0, 10);
     
     if (clientesFiltrados.length > 0) {
         contenedorFiltros.innerHTML = '';
@@ -158,23 +143,23 @@ function filtrarNombres() {
         contenedorFiltros.style.display = 'block';
     }
     
-    // Actualizar la hoja con el texto actual
     actualizarHoja();
 }
 
-// Seleccionar cliente del filtro (con teléfono incluido)
 function seleccionarCliente(cliente) {
     document.getElementById('nombreInput').value = cliente.NombreCliente || '';
     document.getElementById('nombresFiltrados').style.display = 'none';
-    clienteSeleccionado = cliente; // Guardar cliente completo con teléfono
+    clienteSeleccionado = cliente;
     actualizarHoja();
     
-    // Mostrar info del cliente seleccionado
     const telefono = cliente.Telefono || 'Sin teléfono';
     mostrarNotificacion(`✅ Cliente seleccionado: ${cliente.NombreCliente} (${telefono})`, 'success');
 }
 
-// Actualizar el contenido de la hoja A4
+// ===================================
+// GESTIÓN DE LA HOJA A4
+// ===================================
+
 function actualizarHoja() {
     const nombre = document.getElementById('nombreInput').value || 'Sin especificar';
     const empresa = document.getElementById('empresaInput').value || 'Sin especificar';
@@ -208,11 +193,9 @@ function actualizarHoja() {
         document.getElementById('estadoMaterial').textContent = 'Por evaluar';
     }
     
-    // Actualizar hora de generación
     mostrarHoraGeneracion();
 }
 
-// Generar código de referencia único
 function generarCodigoReferencia(nombre, material) {
     const iniciales = nombre.split(' ').map(palabra => palabra.charAt(0)).join('').toUpperCase();
     const materialCodigo = material.substring(0, 3).toUpperCase();
@@ -222,7 +205,6 @@ function generarCodigoReferencia(nombre, material) {
     return `${iniciales}-${materialCodigo}-${fecha}-${random}`;
 }
 
-// Limpiar formulario
 function limpiarFormulario() {
     document.getElementById('nombreInput').value = '';
     document.getElementById('empresaInput').value = '';
@@ -230,386 +212,132 @@ function limpiarFormulario() {
     document.getElementById('fechaInput').value = new Date().toISOString().split('T')[0];
     document.getElementById('nombresFiltrados').style.display = 'none';
     
-    // Limpiar cliente seleccionado
     clienteSeleccionado = null;
-    
-    // Ocultar imagen capturada
     document.getElementById('imagenCapturada').style.display = 'none';
     document.getElementById('btnWhatsApp').style.display = 'none';
     imagenCapturadaBlob = null;
     
     actualizarHoja();
+    mostrarNotificacion('✅ Formulario limpiado correctamente', 'success');
 }
 
-// Capturar la hoja como imagen
+// ===================================
+// CAPTURA DE IMAGEN
+// ===================================
+
 async function capturarHoja() {
     try {
-        const hoja = document.getElementById('hojaDocumento');
-        const btnCapturar = document.querySelector('[onclick="capturarHoja()"]');
-        
-        // Cambiar texto del botón mientras procesa
-        const textoOriginal = btnCapturar.textContent;
-        btnCapturar.textContent = '📸 Capturando...';
-        btnCapturar.disabled = true;
-        
-        // Configuración para html2canvas
-        const opciones = {
-            backgroundColor: '#ffffff',
-            scale: 2, // Mayor calidad
+        const hojaA4 = document.getElementById('hojaA4');
+        const canvas = await html2canvas(hojaA4, {
+            scale: 2,
             useCORS: true,
-            logging: false,
-            width: hoja.offsetWidth,
-            height: hoja.offsetHeight,
-            scrollX: 0,
-            scrollY: 0
-        };
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            width: hojaA4.offsetWidth,
+            height: hojaA4.offsetHeight
+        });
         
-        // Capturar la imagen
-        const canvas = await html2canvas(hoja, opciones);
-        
-        // Convertir a blob
-        canvas.toBlob((blob) => {
+        canvas.toBlob(function(blob) {
             imagenCapturadaBlob = blob;
-            
-            // Mostrar preview
             const url = URL.createObjectURL(blob);
-            document.getElementById('previewImagen').src = url;
-            document.getElementById('imagenCapturada').style.display = 'block';
+            
+            const contenedor = document.getElementById('imagenCapturada');
+            contenedor.innerHTML = `
+                <h3 style="color: #2c5aa0; margin-bottom: 15px;">📸 Imagen Capturada</h3>
+                <img src="${url}" style="max-width: 100%; height: auto; border: 2px solid #ddd; border-radius: 8px;">
+            `;
+            contenedor.style.display = 'block';
+            
             document.getElementById('btnWhatsApp').style.display = 'inline-block';
-            
-            // Restaurar botón
-            btnCapturar.textContent = textoOriginal;
-            btnCapturar.disabled = false;
-            
-            // Notificación de éxito
-            mostrarNotificacion('✅ ¡Imagen capturada correctamente!', 'success');
-            
-        }, 'image/png', 0.9);
+            mostrarNotificacion('✅ Imagen capturada correctamente', 'success');
+        }, 'image/png');
         
     } catch (error) {
-        console.error('Error al capturar:', error);
-        mostrarNotificacion('❌ Error al capturar la imagen', 'error');
-        
-        // Restaurar botón en caso de error
-        const btnCapturar = document.querySelector('[onclick="capturarHoja()"]');
-        btnCapturar.textContent = '📸 Capturar Hoja';
-        btnCapturar.disabled = false;
+        console.error('Error al capturar imagen:', error);
+        mostrarNotificacion('❌ Error al capturar imagen', 'error');
     }
 }
 
-// Compartir por WhatsApp (MEJORADO - envía imagen directamente)
+// ===================================
+// WHATSAPP
+// ===================================
+
 function compartirWhatsApp() {
-    if (!imagenCapturadaBlob) {
-        mostrarNotificacion('❌ Primero debes capturar la hoja', 'error');
+    if (!clienteSeleccionado || !clienteSeleccionado.Telefono) {
+        mostrarNotificacion('⚠️ Selecciona un cliente con teléfono válido', 'warning');
         return;
     }
     
-    // Datos para el mensaje
-    const nombre = document.getElementById('nombreInput').value || 'Cliente';
-    const material = document.getElementById('materialInput').value || 'Material';
-    const empresa = document.getElementById('empresaInput').value || 'Empresa';
-    const codigo = document.getElementById('codigoRef').textContent;
-    
-    // Crear mensaje corto para acompañar la imagen
-    const mensaje = `🔧 *CERTIFICADO DIGITAL*\n\n` +
-                   `📋 Cliente: ${nombre}\n` +
-                   `⚙️ Material: ${material}\n` +
-                   `🔍 Código: ${codigo}\n\n` +
-                   `📅 ${new Date().toLocaleDateString('es-ES')}\n` +
-                   `_LabMetal Digital_`;
-    
-    // Codificar mensaje para URL
-    const mensajeCodificado = encodeURIComponent(mensaje);
-    
-    let urlWhatsApp;
-    
-    // Si hay cliente seleccionado con teléfono, usarlo
-    if (clienteSeleccionado && clienteSeleccionado.Telefono) {
-        let telefonoLimpio = clienteSeleccionado.Telefono.toString().replace(/\D/g, '');
-        
-        // Formato para números peruanos (+51)
-        if (!telefonoLimpio.startsWith('51') && telefonoLimpio.length >= 9) {
-            telefonoLimpio = '51' + telefonoLimpio;
-        }
-        
-        urlWhatsApp = `https://wa.me/${telefonoLimpio}?text=${mensajeCodificado}`;
-        mostrarNotificacion(`📱 Abriendo WhatsApp para ${nombre} (+${telefonoLimpio})`, 'success');
-    } else {
-        // Si no hay teléfono específico, abrir selector de WhatsApp
-        urlWhatsApp = `https://wa.me/?text=${mensajeCodificado}`;
-        mostrarNotificacion('📱 Abriendo WhatsApp - Selecciona el contacto', 'info');
+    if (!imagenCapturadaBlob) {
+        mostrarNotificacion('⚠️ Primero debes capturar la imagen', 'warning');
+        return;
     }
     
-    // Intentar compartir la imagen usando Web Share API
-    if (navigator.share && navigator.canShare) {
-        const archivo = new File([imagenCapturadaBlob], `certificado-${codigo}.png`, {
-            type: 'image/png'
-        });
-        
-        if (navigator.canShare({ files: [archivo] })) {
-            // Compartir imagen directamente con Web Share API
-            navigator.share({
-                title: 'Certificado Digital',
-                text: mensaje,
-                files: [archivo]
-            }).then(() => {
-                mostrarNotificacion('✅ Imagen compartida exitosamente', 'success');
-            }).catch((error) => {
-                console.error('Error al compartir:', error);
-                // Fallback si falla Web Share API
-                abrirWhatsAppConImagen(urlWhatsApp);
-            });
-            return;
-        }
-    }
-    
-    // Fallback: Abrir WhatsApp y descargar imagen
-    abrirWhatsAppConImagen(urlWhatsApp);
-}
-
-// Función auxiliar para abrir WhatsApp y descargar imagen
-function abrirWhatsAppConImagen(urlWhatsApp) {
-    // Abrir WhatsApp Web
-    window.open(urlWhatsApp, '_blank');
-    
-    // Descargar la imagen automáticamente
-    descargarImagenParaWhatsApp();
-    
-    // Mostrar instrucciones después de 2 segundos
-    setTimeout(() => {
-        mostrarInstruccionesWhatsApp();
-    }, 2000);
-}
-
-// Descargar imagen
-function descargarImagen() {
-    if (!imagenCapturadaBlob) return;
-    
-    const url = URL.createObjectURL(imagenCapturadaBlob);
-    const a = document.createElement('a');
-    const codigo = document.getElementById('codigoRef').textContent || 'documento';
-    
-    a.href = url;
-    a.download = `hoja-registro-${codigo}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-// Descargar imagen con nombre específico para WhatsApp
-function descargarImagenParaWhatsApp() {
-    if (!imagenCapturadaBlob) return;
-    
-    const url = URL.createObjectURL(imagenCapturadaBlob);
-    const a = document.createElement('a');
-    const codigo = document.getElementById('codigoRef').textContent || 'certificado';
     const nombre = document.getElementById('nombreInput').value || 'cliente';
+    const telefono = clienteSeleccionado.Telefono.toString();
     
-    // Nombre descriptivo para el archivo
-    const nombreArchivo = `certificado-${nombre.replace(/\s+/g, '-')}-${codigo}.png`;
+    const mensaje = `Hola ${nombre}! Te envío el certificado de análisis de material de LabMetal. ¡Saludos!`;
+    const numeroLimpio = telefono.replace(/\D/g, '');
+    const whatsappUrl = `https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensaje)}`;
     
-    a.href = url;
-    a.download = nombreArchivo;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    mostrarNotificacion('📥 Imagen descargada para adjuntar en WhatsApp', 'success');
+    window.open(whatsappUrl, '_blank');
+    mostrarNotificacion(`📱 Abriendo WhatsApp para ${nombre}`, 'success');
 }
 
-// Mostrar instrucciones para adjuntar la imagen en WhatsApp
-function mostrarInstruccionesWhatsApp() {
-    const nombre = document.getElementById('nombreInput').value || 'el cliente';
-    
-    // Crear modal de instrucciones
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.7);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-        animation: fadeIn 0.3s ease;
-    `;
-    
-    modal.innerHTML = `
-        <div style="
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            max-width: 500px;
-            margin: 20px;
-            text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        ">
-            <h3 style="color: #25D366; margin-bottom: 20px;">📱 WhatsApp se está abriendo</h3>
-            <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
-                🎯 <strong>Para enviar el certificado a ${nombre}:</strong>
-            </p>
-            <div style="text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <p style="margin: 8px 0;">1️⃣ El archivo se descargó automáticamente</p>
-                <p style="margin: 8px 0;">2️⃣ En WhatsApp, haz clic en el <strong>📎 clip</strong></p>
-                <p style="margin: 8px 0;">3️⃣ Selecciona <strong>"Documento"</strong> o <strong>"Galería"</strong></p>
-                <p style="margin: 8px 0;">4️⃣ Busca el archivo descargado</p>
-                <p style="margin: 8px 0;">5️⃣ ¡Envía el certificado! 🚀</p>
-            </div>
-            <button onclick="cerrarModal()" style="
-                background: linear-gradient(135deg, #25D366, #128C7E);
-                color: white;
-                border: none;
-                padding: 12px 25px;
-                border-radius: 8px;
-                font-size: 16px;
-                font-weight: bold;
-                cursor: pointer;
-            ">✅ Entendido</button>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Función para cerrar el modal
-    window.cerrarModal = function() {
-        document.body.removeChild(modal);
-        delete window.cerrarModal;
-    };
-    
-    // Cerrar al hacer clic fuera
-    modal.onclick = function(e) {
-        if (e.target === modal) {
-            window.cerrarModal();
-        }
-    };
-    
-    // Auto-cerrar después de 15 segundos
-    setTimeout(() => {
-        if (document.body.contains(modal)) {
-            window.cerrarModal();
-        }
-    }, 15000);
-}
+// ===================================
+// UTILIDADES
+// ===================================
 
-// Mostrar notificaciones
-function mostrarNotificacion(mensaje, tipo = 'info') {
-    // Crear elemento de notificación
+function mostrarNotificacion(mensaje, tipo) {
+    const colores = {
+        success: '#d4edda',
+        error: '#f8d7da',
+        warning: '#fff3cd',
+        info: '#d1ecf1'
+    };
+    
     const notificacion = document.createElement('div');
     notificacion.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        z-index: 10000;
+        background: ${colores[tipo] || colores.info};
         padding: 15px 20px;
         border-radius: 8px;
-        color: white;
-        font-weight: bold;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 1000;
         max-width: 300px;
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
+        font-size: 14px;
     `;
-    
-    // Colores según tipo
-    switch(tipo) {
-        case 'success':
-            notificacion.style.background = 'linear-gradient(135deg, #25D366, #128C7E)';
-            break;
-        case 'error':
-            notificacion.style.background = 'linear-gradient(135deg, #ff5252, #f44336)';
-            break;
-        case 'info':
-        default:
-            notificacion.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-    }
     
     notificacion.textContent = mensaje;
     document.body.appendChild(notificacion);
     
-    // Animar entrada
     setTimeout(() => {
-        notificacion.style.transform = 'translateX(0)';
-    }, 100);
-    
-    // Remover después de 4 segundos
-    setTimeout(() => {
-        notificacion.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-            if (document.body.contains(notificacion)) {
-                document.body.removeChild(notificacion);
-            }
-        }, 300);
-    }, 4000);
+        notificacion.remove();
+    }, 3000);
 }
 
-// Ocultar filtros cuando se hace clic fuera
-document.addEventListener('click', function(event) {
-    const input = document.getElementById('nombreInput');
-    const filtros = document.getElementById('nombresFiltrados');
-    
-    if (!input.contains(event.target) && !filtros.contains(event.target)) {
-        filtros.style.display = 'none';
-    }
-});
+// ===================================
+// FUNCIONES DE PRUEBA (TESTING)
+// ===================================
 
-// Atajos de teclado
-document.addEventListener('keydown', function(event) {
-    // Ctrl + S para capturar
-    if (event.ctrlKey && event.key === 's') {
-        event.preventDefault();
-        capturarHoja();
-    }
-    
-    // Escape para limpiar
-    if (event.key === 'Escape') {
-        limpiarFormulario();
-    }
-});
-
-// Función adicional para demostración - generar datos aleatorios desde Google Sheets
-function generarDatosAleatorios() {
-    if (clientesGoogleSheets.length === 0) {
+function cargarClienteAleatorio() {
+    if (clientes.length === 0) {
         mostrarNotificacion('⚠️ Primero se deben cargar los clientes', 'error');
-        cargarClientesDesdeJSON();
+        cargarClientes();
         return;
     }
     
-    const clienteAleatorio = clientesGoogleSheets[Math.floor(Math.random() * clientesGoogleSheets.length)];
-    const materiales = ['Acero al Carbono', 'Acero Inoxidable', 'Aluminio', 'Cobre', 'Hierro Fundido', 'Titanio'];
-    const materialAleatorio = materiales[Math.floor(Math.random() * materiales.length)];
-    const empresas = ['TechCorp', 'MetalWorks', 'IndustrialPro', 'SteelMaster', 'AluminumPlus'];
-    const empresaAleatoria = empresas[Math.floor(Math.random() * empresas.length)];
-    
-    // Seleccionar cliente completo (con teléfono)
-    clienteSeleccionado = clienteAleatorio;
+    const clienteAleatorio = clientes[Math.floor(Math.random() * clientes.length)];
     
     document.getElementById('nombreInput').value = clienteAleatorio.NombreCliente || 'Cliente Test';
-    document.getElementById('materialInput').value = materialAleatorio;
-    document.getElementById('empresaInput').value = empresaAleatoria;
+    document.getElementById('empresaInput').value = clienteAleatorio.empresa || 'Empresa Test';
+    document.getElementById('materialInput').value = 'Acero Inoxidable';
     
+    clienteSeleccionado = clienteAleatorio;
     actualizarHoja();
-    mostrarNotificacion(`🎲 Cliente aleatorio: ${clienteAleatorio.NombreCliente} (${clienteAleatorio.Telefono})`, 'info');
+    
+    mostrarNotificacion(`🎲 Cliente aleatorio cargado: ${clienteAleatorio.NombreCliente}`, 'info');
 }
-
-// Agregar botón de datos aleatorios y botón para recargar Google Sheets
-setTimeout(() => {
-    const panelControl = document.querySelector('.control-panel .form-group:last-child');
-    
-    // Botón de datos aleatorios
-    const btnAleatorio = document.createElement('button');
-    btnAleatorio.className = 'btn btn-primary';
-    btnAleatorio.textContent = '🎲 Cliente Aleatorio';
-    btnAleatorio.onclick = generarDatosAleatorios;
-    panelControl.appendChild(btnAleatorio);
-    
-    // Botón para recargar Google Sheets
-    const btnRecargar = document.createElement('button');
-    btnRecargar.className = 'btn btn-primary';
-    btnRecargar.textContent = '🔄 Recargar Clientes';
-    btnRecargar.onclick = cargarClientesDesdeJSON;
-    panelControl.appendChild(btnRecargar);
-}, 1000);
