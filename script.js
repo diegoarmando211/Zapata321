@@ -39,13 +39,19 @@ function cargarClientesGoogleSheets() {
     
     const script = document.createElement("script");
     script.id = "google-script";
-    script.src = GOOGLE_SCRIPT_URL + "?callback=recibirClientesGoogleSheets&_=" + Date.now();
+    
+    // Forzar Versión 8 con cache buster fuerte
+    const cacheBuster = Date.now() + Math.random().toString(36).substr(2, 9);
+    const versionForce = "v8_" + new Date().getTime();
+    script.src = GOOGLE_SCRIPT_URL + `?callback=recibirClientesGoogleSheets&version=${versionForce}&_cb=${cacheBuster}&force_v8=true`;
+    
+    console.log("🚀 Forzando carga de Google Apps Script Versión 8:", script.src);
     
     // Timeout para detectar errores de conexión
     const timeout = setTimeout(() => {
         actualizarEstadoGoogleSheets('❌ Sin acceso a Google Sheets - Verifica permisos', 'error');
-        console.error('Timeout: Posible problema de permisos de Google Sheets');
-    }, 10000); // 10 segundos timeout
+        console.error('Timeout: Posible problema de permisos de Google Sheets o cache de versión anterior');
+    }, 15000); // 15 segundos timeout (aumentado para cache)
     
     // Manejar errores de carga
     script.onerror = function() {
@@ -64,6 +70,24 @@ function cargarClientesGoogleSheets() {
 // Callback para recibir datos de Google Sheets
 function recibirClientesGoogleSheets(clientes) {
     console.log("✅ Datos recibidos desde Google Sheets:", clientes);
+    console.log("📊 Total de clientes recibidos:", clientes ? clientes.length : 0);
+    
+    // Detectar si es versión anterior (solo devuelve 1 cliente) vs nueva (3 clientes)
+    if (clientes && clientes.length === 1) {
+        console.warn("⚠️ DETECTADA VERSIÓN ANTERIOR: Solo 1 cliente recibido - Probablemente cache de Versión 5");
+        actualizarEstadoGoogleSheets('⚠️ Cache detectado - Solo 1 cliente (Versión anterior)', 'warning');
+        
+        // Mostrar botón de recarga forzada
+        const btnForzar = document.getElementById('btnForzarRecarga');
+        if (btnForzar) btnForzar.style.display = 'block';
+        
+    } else if (clientes && clientes.length === 3) {
+        console.log("✅ VERSIÓN 8 CONFIRMADA: 3 clientes recibidos correctamente");
+        
+        // Ocultar botón de recarga forzada
+        const btnForzar = document.getElementById('btnForzarRecarga');
+        if (btnForzar) btnForzar.style.display = 'none';
+    }
     
     if (!clientes || clientes.length === 0) {
         actualizarEstadoGoogleSheets('⚠️ No se encontraron clientes en Google Sheets', 'warning');
@@ -125,6 +149,43 @@ function actualizarEstadoGoogleSheets(mensaje, tipo) {
             elemento.style.color = '#666';
             elemento.style.border = '2px solid #ddd';
     }
+    
+    // Mostrar botón de forzar recarga si hay warning de cache
+    const btnForzar = document.getElementById('btnForzarRecarga');
+    if (btnForzar) {
+        if (tipo === 'warning' && mensaje.includes('cache')) {
+            btnForzar.style.display = 'block';
+        } else if (tipo === 'success') {
+            btnForzar.style.display = 'none';
+        }
+    }
+}
+
+// Función para forzar recarga de Google Sheets (bypass cache)
+function forzarRecargaGoogleSheets() {
+    console.log("🔥 FORZANDO RECARGA - Bypass total de cache");
+    
+    // Limpiar datos anteriores
+    clientesGoogleSheets = [];
+    
+    // Ocultar botón
+    const btnForzar = document.getElementById('btnForzarRecarga');
+    if (btnForzar) btnForzar.style.display = 'none';
+    
+    // Esperar un poco y recargar con parámetros anti-cache extremos
+    setTimeout(() => {
+        const superCacheBuster = Date.now() + Math.random().toString(36).substr(2, 15);
+        const forceReload = "FORCE_V8_" + new Date().getTime();
+        
+        const script = document.createElement("script");
+        script.id = "google-script-force";
+        script.src = GOOGLE_SCRIPT_URL + `?callback=recibirClientesGoogleSheets&force=${forceReload}&nocache=${superCacheBuster}&v8=true&bypass=1`;
+        
+        console.log("🚀 URL de recarga forzada:", script.src);
+        actualizarEstadoGoogleSheets('🔥 Forzando recarga desde servidor...', 'loading');
+        
+        document.body.appendChild(script);
+    }, 100);
 }
 
 // Función para mostrar la hora actual

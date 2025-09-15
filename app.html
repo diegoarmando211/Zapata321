@@ -56,6 +56,13 @@
         🔄 Conectando con Google Sheets...
       </div>
       
+      <!-- Botón para forzar recarga (aparece si hay cache) -->
+      <div id="btnForzarRecarga" style="display: none; margin-bottom: 15px; text-align: center;">
+        <button class="btn btn-warning" onclick="forzarRecargaGoogleSheets()" style="font-size: 12px; padding: 8px 16px;">
+          🔄 Forzar Recarga (Cache Detectado)
+        </button>
+      </div>
+      
       <!-- Campo Nombre con Filtro -->
       <div class="form-group">
         <label for="nombreInput">Nombre:</label>
