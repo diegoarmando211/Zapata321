@@ -42,14 +42,15 @@ function cargarClientesGoogleSheets() {
     
     // Timeout para detectar errores de conexión
     const timeout = setTimeout(() => {
-        actualizarEstadoGoogleSheets('❌ Error de conexión con Google Sheets', 'error');
+        actualizarEstadoGoogleSheets('❌ Sin acceso a Google Sheets - Verifica permisos', 'error');
+        console.error('Timeout: Posible problema de permisos de Google Sheets');
     }, 10000); // 10 segundos timeout
     
     // Manejar errores de carga
     script.onerror = function() {
         clearTimeout(timeout);
-        actualizarEstadoGoogleSheets('❌ Error al conectar con Google Sheets', 'error');
-        console.error('Error al cargar Google Sheets');
+        actualizarEstadoGoogleSheets('❌ Error de permisos - Contacta al administrador', 'error');
+        console.error('Error al cargar Google Sheets - Problema de permisos');
     };
     
     script.onload = function() {
