@@ -38,7 +38,7 @@ function cargarClientesGoogleSheets() {
     
     const script = document.createElement("script");
     script.id = "google-script";
-    script.src = GOOGLE_SCRIPT_URL + "?callback=recibirClientesGoogleSheets&_=" + Date.now();
+    script.src = GOOGLE_SCRIPT_URL + "?callback=mostrarClientes&_=" + Date.now();
     
     // Timeout para detectar errores de conexión
     const timeout = setTimeout(() => {
@@ -72,6 +72,12 @@ function recibirClientesGoogleSheets(clientes) {
     
     clientesGoogleSheets = clientes;
     actualizarEstadoGoogleSheets(`✅ ${clientes.length} clientes cargados correctamente`, 'success');
+}
+
+// Función alternativa para compatibilidad con Google Apps Script
+function mostrarClientes(clientes) {
+    // Redirigir a la función principal
+    recibirClientesGoogleSheets(clientes);
 }
 
 // Actualizar estado visual de la conexión con Google Sheets
