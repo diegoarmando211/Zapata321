@@ -28,51 +28,101 @@
   try {
     // Tu ID de hoja específico
     const sheet = SpreadsheetApp.openById("1KL7D7vw1TdCeOlOp6NeMEGzvulNrP2VRq03oKezdZ1s").getActiveSheet();
+    
+    // Obtener TODOS los datos
     const data = sheet.getDataRange().getValues();
     
-    console.log("=== DEBUG COMPLETO ===");
+    console.log("=== DEBUG COMPLETO v2 ===");
     console.log("Total de filas encontradas:", data.length);
-    console.log("Datos completos:", data);
+    console.log("Datos RAW completos:", JSON.stringify(data));
     
-    if (data.length < 1) {
+    if (data.length < 2) {
+      console.log("ERROR: No hay suficientes datos (necesita header + al menos 1 fila)");
       return ContentService.createTextOutput('recibirClientesGoogleSheets([])').setMimeType(ContentService.MimeType.JAVASCRIPT);
     }
     
-    // Mostrar headers (primera fila)
+    // Headers (primera fila)
     const headers = data[0];
     console.log("Headers encontrados:", headers);
     
-    // Mostrar todas las filas de datos
-    const todasLasFilas = data.slice(1);
-    console.log("Filas de datos (sin headers):", todasLasFilas);
+    // Verificar que existan las columnas necesarias
+    const indexNombre = headers.indexOf('NombreCliente');
+    const indexTelefono = headers.indexOf('Telefono');
+    const indexID = headers.indexOf('ID');
     
-    // Procesar TODOS los datos (sin filtrar por ahora)
-    const todosLosClientes = todasLasFilas.map((row, index) => {
-      const cliente = { fila: index + 2 }; // +2 porque empezamos en fila 1 y saltamos header
-      headers.forEach((header, colIndex) => {
-        cliente[header] = row[colIndex];
-      });
-      return cliente;
+    console.log("Índices de columnas:");
+    console.log("- ID:", indexID);
+    console.log("- NombreCliente:", indexNombre);
+    console.log("- Telefono:", indexTelefono);
+    
+    if (indexNombre === -1) {
+      console.log("ERROR: No se encontró la columna 'NombreCliente'");
+      return ContentService.createTextOutput('recibirClientesGoogleSheets([])').setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    
+    if (indexTelefono === -1) {
+      console.log("ERROR: No se encontró la columna 'Telefono'");
+      return ContentService.createTextOutput('recibirClientesGoogleSheets([])').setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    
+    // Filas de datos (sin header)
+    const filasDeatos = data.slice(1);
+    console.log("Filas de datos (sin header):", filasDeatos.length);
+    
+    // Procesar cada fila
+    const todosLosClientes = [];
+    
+    filasDeatos.forEach((fila, index) => {
+      const numeroFila = index + 2; // +2 porque empezamos en 1 y saltamos header
+      
+      console.log(`\n--- PROCESANDO FILA ${numeroFila} ---`);
+      console.log("Datos de la fila:", fila);
+      
+      // Crear objeto cliente
+      const cliente = {
+        fila: numeroFila,
+        ID: indexID >= 0 ? fila[indexID] : null,
+        NombreCliente: fila[indexNombre],
+        Telefono: fila[indexTelefono]
+      };
+      
+      console.log("Cliente creado:", cliente);
+      
+      // Verificar si tiene datos válidos
+      const nombreValido = cliente.NombreCliente && 
+                          cliente.NombreCliente.toString().trim() !== '' && 
+                          cliente.NombreCliente.toString().trim() !== 'undefined';
+                          
+      const telefonoValido = cliente.Telefono && 
+                            cliente.Telefono.toString().trim() !== '' && 
+                            cliente.Telefono.toString().trim() !== 'undefined';
+      
+      console.log(`Validación fila ${numeroFila}:`);
+      console.log("- Nombre válido:", nombreValido, `(valor: "${cliente.NombreCliente}")`);
+      console.log("- Teléfono válido:", telefonoValido, `(valor: "${cliente.Telefono}")`);
+      
+      if (nombreValido && telefonoValido) {
+        console.log(`✅ Cliente fila ${numeroFila} AGREGADO`);
+        todosLosClientes.push(cliente);
+      } else {
+        console.log(`❌ Cliente fila ${numeroFila} RECHAZADO`);
+      }
     });
     
-    console.log("Todos los clientes procesados:", todosLosClientes);
-    
-    // Filtrar solo los que tienen NombreCliente Y Telefono
-    const clientesFiltrados = todosLosClientes.filter(cliente => {
-      const tieneNombre = cliente.NombreCliente && cliente.NombreCliente.toString().trim() !== '';
-      const tieneTelefono = cliente.Telefono && cliente.Telefono.toString().trim() !== '';
-      console.log(`Cliente fila ${cliente.fila}: Nombre="${cliente.NombreCliente}" (${tieneNombre}) | Telefono="${cliente.Telefono}" (${tieneTelefono})`);
-      return tieneNombre && tieneTelefono;
-    });
-    
-    console.log("Clientes después del filtro:", clientesFiltrados);
+    console.log("\n=== RESULTADO FINAL ===");
+    console.log("Clientes válidos encontrados:", todosLosClientes.length);
+    console.log("Clientes finales:", JSON.stringify(todosLosClientes));
     
     const callback = e.parameter.callback || 'recibirClientesGoogleSheets';
-    const response = `${callback}(${JSON.stringify(clientesFiltrados)})`;
+    const response = `${callback}(${JSON.stringify(todosLosClientes)})`;
+    
+    console.log("Respuesta enviada:", response);
     
     return ContentService.createTextOutput(response).setMimeType(ContentService.MimeType.JAVASCRIPT);
+    
   } catch (error) {
-    console.error('Error completo:', error);
+    console.error('ERROR CRÍTICO:', error);
+    console.error('Stack trace:', error.stack);
     const callback = e.parameter.callback || 'recibirClientesGoogleSheets';
     return ContentService.createTextOutput(`${callback}([])`).setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
