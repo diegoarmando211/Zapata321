@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Certificado Seguro</title>
+  <title>Login - DIEGO PRO</title>
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="auth.js"></script>
 </head>
@@ -10,21 +10,9 @@
   <!-- Formulario de login -->
   <div id="login-form">
     <h2>Iniciar sesión</h2>
-    <input type="email" id="email" placeholder="Correo electrónico"><br>
-    <input type="password" id="password" placeholder="Contraseña"><br>
+    <input type="email" id="email" placeholder="Correo electrónico" required><br>
+    <input type="password" id="password" placeholder="Contraseña" required><br>
     <button onclick="login()">Entrar</button>
-  </div>
-
-  <!-- Contenido protegido -->
-  <div id="contenido" style="display:none;">
-    <h2>Certificado</h2>
-    <!-- Aquí va tu certificado, imagen, CSS, etc -->
-    <div style="border: 2px dashed #ccc; padding: 20px; text-align: center; color: #999;">
-      <p>📄 Aquí va tu imagen de certificado</p>
-      <small>Agrega el archivo 'certificado.png' para mostrar la imagen</small>
-    </div>
-    <br>
-    <button onclick="logout()">Cerrar sesión</button>
   </div>
 </body>
 </html>
