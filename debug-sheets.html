@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug Google Sheets - Datos Completos</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .debug-box { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    .error { background: #ffe6e6; }
+    .success { background: #e6ffe6; }
+    .warning { background: #fff3cd; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Debug - Google Sheets Data</h1>
+  
+  <div class="debug-box">
+    <h2>📊 Datos Raw del Google Apps Script:</h2>
+    <p><strong>URL:</strong> https://script.google.com/macros/s/AKfycbzZjJw8t7H5KpmmGiKcFdKRnzRqXlvz7P3Q6U0vlTMqZa7GSMhzOpMM8vsCWuJi2LEA/exec</p>
+    <div id="raw-data">Cargando...</div>
+  </div>
+
+  <div class="debug-box">
+    <h2>📋 Clientes Procesados:</h2>
+    <div id="processed-data">Esperando datos...</div>
+  </div>
+
+  <div class="debug-box">
+    <h2>🔧 Posibles Problemas:</h2>
+    <ul>
+      <li><strong>Columnas mal nombradas:</strong> Verifica que las columnas se llamen exactamente "NombreCliente" y "Telefono"</li>
+      <li><strong>Celdas vacías:</strong> Verifica que todos los clientes tengan nombre Y teléfono</li>
+      <li><strong>Espacios en blanco:</strong> Puede haber espacios invisibles en las celdas</li>
+      <li><strong>Filas vacías:</strong> Entre los datos puede haber filas vacías</li>
+    </ul>
+  </div>
+
+  <script>
+    // Probar la URL directamente
+    fetch('https://script.google.com/macros/s/AKfycbzZjJw8t7H5KpmmGiKcFdKRnzRqXlvz7P3Q6U0vlTMqZa7GSMhzOpMM8vsCWuJi2LEA/exec?callback=mostrarResultados&_=' + Date.now())
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('raw-data').innerHTML = `<pre>${data}</pre>`;
+      })
+      .catch(error => {
+        document.getElementById('raw-data').innerHTML = `<div class="error">Error: ${error}</div>`;
+      });
+
+    // Función que será llamada por el script
+    window.mostrarResultados = function(clientes) {
+      console.log('Datos recibidos:', clientes);
+      
+      let html = `<div class="success"><strong>✅ ${clientes.length} cliente(s) encontrado(s)</strong></div>`;
+      
+      if (clientes.length > 0) {
+        html += '<table><tr><th>Nombre</th><th>Teléfono</th><th>Otras Columnas</th></tr>';
+        clientes.forEach(cliente => {
+          const otrasColumnas = Object.keys(cliente).filter(key => key !== 'NombreCliente' && key !== 'Telefono');
+          html += `<tr>
+            <td>${cliente.NombreCliente || 'VACÍO'}</td>
+            <td>${cliente.Telefono || 'VACÍO'}</td>
+            <td>${otrasColumnas.map(col => `${col}: ${cliente[col]}`).join(', ')}</td>
+          </tr>`;
+        });
+        html += '</table>';
+      }
+      
+      document.getElementById('processed-data').innerHTML = html;
+    };
+
+    // Cargar usando JSONP
+    const script = document.createElement('script');
+    script.src = 'https://script.google.com/macros/s/AKfycbzZjJw8t7H5KpmmGiKcFdKRnzRqXlvz7P3Q6U0vlTMqZa7GSMhzOpMM8vsCWuJi2LEA/exec?callback=mostrarResultados&_=' + Date.now();
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>
