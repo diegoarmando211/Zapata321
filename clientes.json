@@ -1,0 +1,27 @@
+{
+  "clientes": [
+    {
+      "id": 1,
+      "NombreCliente": "Diego Zapata",
+      "Telefono": 983832001,
+      "empresa": "LabMetal",
+      "email": "diego@labmetal.com"
+    },
+    {
+      "id": 2,
+      "NombreCliente": "Frank Didier",
+      "Telefono": 999999999,
+      "empresa": "Metalúrgica Frank",
+      "email": "frank@metalurgica.com"
+    },
+    {
+      "id": 3,
+      "NombreCliente": "Daniel Perez",
+      "Telefono": 912345678,
+      "empresa": "Industrias Perez",
+      "email": "daniel@industrias.com"
+    }
+  ],
+  "version": "1.0",
+  "lastUpdated": "2025-09-15"
+}

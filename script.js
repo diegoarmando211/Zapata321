@@ -1,9 +1,8 @@
-// Configuración de Google Sheets (URL pública actualizada - Versión 7 ID CORRECTO)
-// URL de Google Apps Script - Versión 8 (ID correcto de Sheets)
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzkEwwZllRfV5eCdS-wA2gTCMyDcjJaSf7TO22wb8MbXpr9yRFn3usMaPENv1EieU3X/exec';
+// Configuración del archivo JSON local
+const CLIENTES_JSON_URL = './clientes.json';
 
 // Variables globales
-let clientesGoogleSheets = []; // Datos reales de Google Sheets
+let clientesGoogleSheets = []; // Mantenemos el nombre para compatibilidad
 let imagenCapturadaBlob = null;
 let clienteSeleccionado = null; // Cliente seleccionado con su teléfono
 
@@ -16,119 +15,55 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mostrar hora de generación
     mostrarHoraGeneracion();
     
-    // Cargar datos de Google Sheets
-    cargarClientesGoogleSheets();
+    // Cargar datos desde JSON local
+    cargarClientesDesdeJSON();
     
     // Actualizar la hoja inicialmente
     actualizarHoja();
 });
 
-// Cargar clientes desde Google Sheets
-function cargarClientesGoogleSheets() {
-    // Mostrar estado de carga
-    actualizarEstadoGoogleSheets('🔄 Cargando clientes desde Google Sheets...', 'loading');
-    
-    // Eliminar script anterior si existe
-    const scriptAnterior = document.getElementById("google-script");
-    if (scriptAnterior) scriptAnterior.remove();
-
-    if (GOOGLE_SCRIPT_URL.includes("PEGA_AQUI")) {
-        actualizarEstadoGoogleSheets('⚠️ URL de Google Sheets no configurada', 'error');
-        return;
-    }
-    
-    const script = document.createElement("script");
-    script.id = "google-script";
-    
-    // Forzar Versión 8 con cache buster fuerte
-    const cacheBuster = Date.now() + Math.random().toString(36).substr(2, 9);
-    const versionForce = "v8_" + new Date().getTime();
-    script.src = GOOGLE_SCRIPT_URL + `?callback=recibirClientesGoogleSheets&version=${versionForce}&_cb=${cacheBuster}&force_v8=true`;
-    
-    console.log("🚀 Forzando carga de Google Apps Script Versión 8:", script.src);
-    
-    // Timeout para detectar errores de conexión
-    const timeout = setTimeout(() => {
-        actualizarEstadoGoogleSheets('❌ Sin acceso a Google Sheets - Verifica permisos', 'error');
-        console.error('Timeout: Posible problema de permisos de Google Sheets o cache de versión anterior');
-    }, 15000); // 15 segundos timeout (aumentado para cache)
-    
-    // Manejar errores de carga
-    script.onerror = function() {
-        clearTimeout(timeout);
-        actualizarEstadoGoogleSheets('❌ Error de permisos - Contacta al administrador', 'error');
-        console.error('Error al cargar Google Sheets - Problema de permisos');
-    };
-    
-    script.onload = function() {
-        clearTimeout(timeout);
-    };
-    
-    // Agregar script de forma segura
-    const container = document.body || document.head || document.documentElement;
-    if (container) {
-        container.appendChild(script);
-    } else {
-        console.error("No se pudo encontrar un contenedor para el script");
-        actualizarEstadoGoogleSheets('❌ Error del DOM - Recarga la página', 'error');
-    }
-}
-
-// Callback para recibir datos de Google Sheets
-function recibirClientesGoogleSheets(clientes) {
-    console.log("✅ Datos recibidos desde Google Sheets:", clientes);
-    console.log("📊 Total de clientes recibidos:", clientes ? clientes.length : 0);
-    
-    // Detectar si es versión anterior (solo devuelve 1 cliente) vs nueva (3 clientes)
-    if (clientes && clientes.length === 1) {
-        console.warn("⚠️ DETECTADA VERSIÓN ANTERIOR: Solo 1 cliente recibido - Probablemente cache de Versión 5");
-        actualizarEstadoGoogleSheets('⚠️ Cache detectado - Solo 1 cliente (Versión anterior)', 'warning');
+// Cargar clientes desde archivo JSON local
+async function cargarClientesDesdeJSON() {
+    try {
+        // Mostrar estado de carga
+        actualizarEstadoClientes('🔄 Cargando clientes desde archivo JSON...', 'loading');
         
-        // Mostrar botón de recarga forzada
-        const btnForzar = document.getElementById('btnForzarRecarga');
-        if (btnForzar) {
-            btnForzar.style.display = 'block';
-            
-            // Auto-ejecutar recarga forzada después de 2 segundos
-            console.log("🔥 Auto-ejecutando recarga forzada en 2 segundos...");
-            setTimeout(() => {
-                forzarRecargaGoogleSheets();
-            }, 2000);
+        // Fetch del archivo JSON con cache buster para actualizaciones
+        const response = await fetch(CLIENTES_JSON_URL + '?v=' + Date.now());
+        
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
         }
         
-    } else if (clientes && clientes.length === 3) {
-        console.log("✅ VERSIÓN 8 CONFIRMADA: 3 clientes recibidos correctamente");
+        const data = await response.json();
         
-        // Ocultar botón de recarga forzada
-        const btnForzar = document.getElementById('btnForzarRecarga');
-        if (btnForzar) btnForzar.style.display = 'none';
-    }
-    
-    if (!clientes || clientes.length === 0) {
-        actualizarEstadoGoogleSheets('⚠️ No se encontraron clientes en Google Sheets', 'warning');
+        if (!data.clientes || !Array.isArray(data.clientes)) {
+            throw new Error('Formato de JSON inválido');
+        }
+        
+        console.log("✅ Datos cargados desde JSON local:", data.clientes);
+        
+        // Procesar los datos (mantener compatibilidad con el código existente)
+        clientesGoogleSheets = data.clientes;
+        
+        actualizarEstadoClientes(`✅ ${data.clientes.length} clientes cargados desde JSON`, 'success');
+        
+        // Si hay texto en el input de nombre, activar el filtro automáticamente
+        const inputNombre = document.getElementById('nombreInput');
+        if (inputNombre && inputNombre.value.trim().length > 0) {
+            console.log("🔄 Actualizando filtro automáticamente con clientes cargados");
+            filtrarNombres();
+        }
+        
+    } catch (error) {
+        console.error('❌ Error al cargar clientes desde JSON:', error);
+        actualizarEstadoClientes('❌ Error al cargar archivo de clientes', 'error');
         clientesGoogleSheets = [];
-        return;
-    }
-    
-    clientesGoogleSheets = clientes;
-    actualizarEstadoGoogleSheets(`✅ ${clientes.length} clientes cargados correctamente`, 'success');
-    
-    // Si hay texto en el input de nombre, activar el filtro automáticamente
-    const inputNombre = document.getElementById('nombreInput');
-    if (inputNombre && inputNombre.value.trim().length > 0) {
-        console.log("🔄 Actualizando filtro automáticamente con clientes cargados");
-        filtrarNombres();
     }
 }
 
-// Función alternativa para compatibilidad con Google Apps Script
-function mostrarClientes(clientes) {
-    // Redirigir a la función principal
-    recibirClientesGoogleSheets(clientes);
-}
-
-// Actualizar estado visual de la conexión con Google Sheets
-function actualizarEstadoGoogleSheets(mensaje, tipo) {
+// Actualizar estado visual de la conexión con el sistema de clientes
+function actualizarEstadoClientes(mensaje, tipo) {
     const elemento = document.getElementById('estadoGoogleSheets');
     if (!elemento) return;
     
@@ -164,64 +99,6 @@ function actualizarEstadoGoogleSheets(mensaje, tipo) {
             elemento.style.color = '#666';
             elemento.style.border = '2px solid #ddd';
     }
-    
-    // Mostrar botón de forzar recarga si hay warning de cache
-    const btnForzar = document.getElementById('btnForzarRecarga');
-    if (btnForzar) {
-        if (tipo === 'warning' && mensaje.includes('cache')) {
-            btnForzar.style.display = 'block';
-        } else if (tipo === 'success') {
-            btnForzar.style.display = 'none';
-        }
-    }
-}
-
-// Función para forzar recarga de Google Sheets (bypass cache)
-function forzarRecargaGoogleSheets() {
-    console.log("🔥 FORZANDO RECARGA - Bypass total de cache");
-    
-    // Limpiar datos anteriores
-    clientesGoogleSheets = [];
-    
-    // Ocultar botón
-    const btnForzar = document.getElementById('btnForzarRecarga');
-    if (btnForzar) btnForzar.style.display = 'none';
-    
-    // Eliminar scripts anteriores
-    const scriptsAnteriores = document.querySelectorAll('[id^="google-script"]');
-    scriptsAnteriores.forEach(script => script.remove());
-    
-    // Esperar un poco y recargar con parámetros anti-cache extremos
-    setTimeout(() => {
-        const superCacheBuster = Date.now() + Math.random().toString(36).substr(2, 15);
-        const forceReload = "FORCE_V8_" + new Date().getTime();
-        const sessionId = Math.random().toString(36).substr(2, 10);
-        
-        const script = document.createElement("script");
-        script.id = "google-script-force-" + sessionId;
-        
-        // URL con múltiples parámetros anti-cache
-        script.src = GOOGLE_SCRIPT_URL + 
-            `?callback=recibirClientesGoogleSheets` +
-            `&force=${forceReload}` +
-            `&nocache=${superCacheBuster}` +
-            `&v8=true` +
-            `&bypass=1` +
-            `&reload=true` +
-            `&session=${sessionId}` +
-            `&timestamp=${Date.now()}`;
-        
-        console.log("🚀 URL de recarga forzada:", script.src);
-        actualizarEstadoGoogleSheets('🔥 Forzando recarga desde servidor (Bypass total)...', 'loading');
-        
-        // Agregar script de forma segura
-        const container = document.body || document.head || document.documentElement;
-        if (container) {
-            container.appendChild(script);
-        } else {
-            console.error("No se pudo encontrar un contenedor para el script");
-        }
-    }, 100);
 }
 
 // Función para mostrar la hora actual
@@ -251,8 +128,8 @@ function filtrarNombres() {
     if (clientesGoogleSheets.length === 0) {
         contenedorFiltros.innerHTML = '<div class="filter-item" style="background: #fff3cd; color: #856404;">🔄 Cargando clientes desde Google Sheets...</div>';
         contenedorFiltros.style.display = 'block';
-        console.log("⚠️ No hay clientes cargados, intentando cargar desde Google Sheets");
-        cargarClientesGoogleSheets();
+        console.log("⚠️ No hay clientes cargados, intentando cargar desde JSON");
+        cargarClientesDesdeJSON();
         return;
     }
     
@@ -696,8 +573,8 @@ document.addEventListener('keydown', function(event) {
 // Función adicional para demostración - generar datos aleatorios desde Google Sheets
 function generarDatosAleatorios() {
     if (clientesGoogleSheets.length === 0) {
-        mostrarNotificacion('⚠️ Primero se deben cargar los clientes de Google Sheets', 'error');
-        cargarClientesGoogleSheets();
+        mostrarNotificacion('⚠️ Primero se deben cargar los clientes', 'error');
+        cargarClientesDesdeJSON();
         return;
     }
     
@@ -733,6 +610,6 @@ setTimeout(() => {
     const btnRecargar = document.createElement('button');
     btnRecargar.className = 'btn btn-primary';
     btnRecargar.textContent = '🔄 Recargar Clientes';
-    btnRecargar.onclick = cargarClientesGoogleSheets;
+    btnRecargar.onclick = cargarClientesDesdeJSON;
     panelControl.appendChild(btnRecargar);
 }, 1000);
