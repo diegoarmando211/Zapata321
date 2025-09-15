@@ -1,5 +1,5 @@
-// Configuración de Google Sheets (URL pública actualizada - Versión 5 DEBUG)
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbnMzydAA1U48dN5VrdH8uVNPVmbus5IRImmF6zKfenpj7zpcsagGvfjLoamFeJUcM/exec";
+// Configuración de Google Sheets (URL pública actualizada - Versión 6 DEBUG MEJORADO)
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwbNUVOl8sUOGmn63i4-S14exPl0OGZC1-Lmy7DXoOpCRzBu5e0SdYht3wrbQ_gv7U/exec";
 
 // Variables globales
 let clientesGoogleSheets = []; // Datos reales de Google Sheets
