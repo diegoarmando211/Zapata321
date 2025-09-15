@@ -24,7 +24,7 @@ window.login = function() {
   signInWithEmailAndPassword(auth, email, password)
     .then((userCredential) => {
       // Usuario autenticado exitosamente, redirigir a la aplicación principal
-      window.location.href = 'index.html';
+      window.location.href = 'app.html';
     })
     .catch((error) => {
       alert("Error: " + error.message);

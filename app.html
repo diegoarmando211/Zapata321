@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hoja Digital A4 - Captura y Comparte</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Librería para capturar screenshots -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <!-- Firebase Auth -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC8ZYyutzFmGzO-O9KYIANQZvl2BhQvB20",
+      authDomain: "certificados-a7d6f.firebaseapp.com",
+      projectId: "certificados-a7d6f",
+      storageBucket: "certificados-a7d6f.firebasestorage.app",
+      messagingSenderId: "414462338444",
+      appId: "1:414462338444:web:869e510428b2140d7762a9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Verificar autenticación
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // Usuario no autenticado, redirigir al login
+        window.location.href = 'index.html';
+      }
+    });
+
+    // Función para cerrar sesión
+    window.cerrarSesion = function() {
+      signOut(auth).then(() => {
+        window.location.href = 'index.html';
+      });
+    };
+  </script>
+</head>
+<body>
+  <div class="container">
+    <!-- Panel de Control Lateral -->
+    <div class="control-panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>DIEGO PRO</h2>
+        <button onclick="cerrarSesion()" style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+          🚪 Salir
+        </button>
+      </div>
+      
+      <!-- Estado de conexión con Google Sheets -->
+      <div id="estadoGoogleSheets" class="form-group" style="padding: 10px; border-radius: 8px; background: #f0f2f5; margin-bottom: 20px; text-align: center; font-size: 14px;">
+        🔄 Conectando con Google Sheets...
+      </div>
+      
+      <!-- Campo Nombre con Filtro -->
+      <div class="form-group">
+        <label for="nombreInput">Nombre:</label>
+        <input type="text" id="nombreInput" class="form-input" placeholder="Escribe un nombre..." oninput="filtrarNombres()">
+        <div id="nombresFiltrados" class="filter-list" style="display: none;"></div>
+      </div>
+      
+      <!-- Campo Material -->
+      <div class="form-group">
+        <label for="materialInput">Material:</label>
+        <select id="materialInput" class="form-input" onchange="actualizarHoja()">
+          <option value="">Selecciona material...</option>
+          <option value="Acero al Carbono">Acero al Carbono</option>
+          <option value="Acero Inoxidable">Acero Inoxidable</option>
+          <option value="Aluminio">Aluminio</option>
+          <option value="Cobre">Cobre</option>
+          <option value="Hierro Fundido">Hierro Fundido</option>
+          <option value="Titanio">Titanio</option>
+        </select>
+      </div>
+      
+      <!-- Campo Empresa -->
+      <div class="form-group">
+        <label for="empresaInput">Empresa:</label>
+        <input type="text" id="empresaInput" class="form-input" placeholder="Nombre de la empresa..." onchange="actualizarHoja()">
+      </div>
+      
+      <!-- Campo Fecha -->
+      <div class="form-group">
+        <label for="fechaInput">Fecha:</label>
+        <input type="date" id="fechaInput" class="form-input" onchange="actualizarHoja()">
+      </div>
+      
+      <!-- Botones de Acción -->
+      <div class="form-group">
+        <button class="btn btn-primary" onclick="limpiarFormulario()">🗑️ Limpiar Todo</button>
+        <button class="btn btn-warning" onclick="capturarHoja()">📸 Capturar Hoja</button>
+        <button class="btn btn-success" onclick="compartirWhatsApp()" id="btnWhatsApp" style="display: none;">📱 Enviar WhatsApp</button>
+      </div>
+      
+      <!-- Preview de imagen capturada -->
+      <div id="imagenCapturada" style="display: none;">
+        <h3>📷 Imagen Capturada:</h3>
+        <img id="previewImagen" style="width: 100%; border-radius: 8px; border: 2px solid #ddd;">
+      </div>
+    </div>
+    
+    <!-- Hoja A4 Digital -->
+    <div class="document-sheet" id="hojaDocumento">
+      <div class="sheet-header">
+        <div class="sheet-title">📋 HOJA DE REGISTRO</div>
+        <div class="sheet-subtitle">Sistema Digital de Captura</div>
+      </div>
+      
+      <div class="sheet-content">
+        <div class="data-row">
+          <span class="data-label">👤 Nombre:</span>
+          <span class="data-value" id="displayNombre">Sin especificar</span>
+        </div>
+        
+        <div class="data-row">
+          <span class="data-label">🏢 Empresa:</span>
+          <span class="data-value" id="displayEmpresa">Sin especificar</span>
+        </div>
+        
+        <div class="data-row">
+          <span class="data-label">⚙️ Material:</span>
+          <span class="data-value" id="displayMaterial">Sin especificar</span>
+        </div>
+        
+        <div class="data-row">
+          <span class="data-label">📅 Fecha:</span>
+          <span class="data-value" id="displayFecha">Sin especificar</span>
+        </div>
+        
+        <div class="materials-section">
+          <div class="materials-title">🔧 DETALLES ADICIONALES</div>
+          <div class="material-item">
+            <strong>🔍 Estado del Material:</strong> <span id="estadoMaterial">Por evaluar</span>
+          </div>
+          <div class="material-item">
+            <strong>📊 Código de Referencia:</strong> <span id="codigoRef">-</span>
+          </div>
+          <div class="material-item">
+            <strong>💼 Responsable:</strong> <span id="responsable">LabMetal</span>
+          </div>
+        </div>
+        
+        <div class="sheet-footer">
+          <p>📍 Documento generado digitalmente • <span id="horaGeneracion"></span></p>
+          <p>🔒 Sistema de Captura Digital A4</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
