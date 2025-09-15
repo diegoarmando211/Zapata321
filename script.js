@@ -1,5 +1,5 @@
-// Configuración de Google Sheets (tu URL original)
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFPgC2j22mqWqA1qdh17-uoVo1hJ7fKL5_9VyKKYqk-B8zplI15rGr-jYeQwu_-sqz/exec";
+// Configuración de Google Sheets (URL pública actualizada)
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw4ofPJnyBmquH45UTa_hQJ5513kh1EbaB0O1IpHZZ01mmp0RskqFrC_DeRl8tWDKES/exec";
 
 // Variables globales
 let clientesGoogleSheets = []; // Datos reales de Google Sheets
