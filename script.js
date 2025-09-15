@@ -1,5 +1,6 @@
 // Configuración de Google Sheets (URL pública actualizada - Versión 7 ID CORRECTO)
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwI8x2SAYxGob8TvAqPkRts6i4qvxr3tws9M6CqoF9DFvCTLNbwtc0lUehleQaLZWx7/exec";
+// URL de Google Apps Script - Versión 8 (ID correcto de Sheets)
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzkEwwZllRfV5eCdS-wA2gTCMyDcjJaSf7TO22wb8MbXpr9yRFn3usMaPENv1EieU3X/exec';
 
 // Variables globales
 let clientesGoogleSheets = []; // Datos reales de Google Sheets
