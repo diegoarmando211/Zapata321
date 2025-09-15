@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 // Tu configuración de Firebase
 const firebaseConfig = {
@@ -15,6 +15,14 @@ const firebaseConfig = {
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+// Verificar si el usuario ya está autenticado
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // Usuario ya está logueado, redirigir a la aplicación
+    window.location.href = 'app.html';
+  }
+});
 
 // Login
 window.login = function() {
@@ -34,7 +42,6 @@ window.login = function() {
 // Logout (opcional)
 window.logout = function() {
   signOut(auth).then(() => {
-    document.getElementById("contenido").style.display = "none";
-    document.getElementById("login-form").style.display = "block";
+    window.location.href = 'index.html';
   });
 };
