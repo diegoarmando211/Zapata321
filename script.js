@@ -224,56 +224,103 @@ function limpiarFormulario() {
 // ===================================
 
 async function capturarHoja() {
-    console.log('=== INICIANDO CAPTURA DE IMAGEN ===');
+    console.log('=== INICIANDO CAPTURA DE IMAGEN (VERSIÓN ROBUSTA) ===');
     
-    // Esperar a que el DOM esté completamente cargado
-    if (document.readyState !== 'complete') {
-        console.log('⏳ Esperando a que el DOM esté listo...');
-        await new Promise(resolve => {
-            if (document.readyState === 'complete') {
-                resolve();
-            } else {
-                window.addEventListener('load', resolve);
+    // Función auxiliar para buscar elemento de múltiples formas
+    function buscarElementoRobusto() {
+        console.log('🔍 Buscando elemento de múltiples formas...');
+        
+        // Método 1: Por ID directo
+        let elemento = document.getElementById('hojaDocumento');
+        if (elemento) {
+            console.log('✅ Método 1: Encontrado por ID directo');
+            return elemento;
+        }
+        
+        // Método 2: Por querySelector
+        elemento = document.querySelector('#hojaDocumento');
+        if (elemento) {
+            console.log('✅ Método 2: Encontrado por querySelector');
+            return elemento;
+        }
+        
+        // Método 3: Por clase
+        elemento = document.querySelector('.document-sheet');
+        if (elemento) {
+            console.log('✅ Método 3: Encontrado por clase document-sheet');
+            return elemento;
+        }
+        
+        // Método 4: Buscar cualquier div que contenga "HOJA DE REGISTRO"
+        const allDivs = document.querySelectorAll('div');
+        for (let div of allDivs) {
+            if (div.textContent && div.textContent.includes('HOJA DE REGISTRO')) {
+                console.log('✅ Método 4: Encontrado por contenido de texto');
+                return div.closest('.document-sheet') || div.parentElement;
             }
-        });
+        }
+        
+        console.log('❌ No se encontró el elemento por ningún método');
+        return null;
     }
     
-    console.log('🔍 Buscando elemento hojaDocumento...');
-    let elemento = document.getElementById('hojaDocumento');
-    
-    // Intentar encontrar el elemento varias veces
+    // Esperar y buscar elemento
+    let elemento = null;
     let intentos = 0;
-    while (!elemento && intentos < 5) {
-        console.log(`❌ Intento ${intentos + 1}: Elemento no encontrado, esperando...`);
-        await new Promise(resolve => setTimeout(resolve, 500));
-        elemento = document.getElementById('hojaDocumento');
+    const maxIntentos = 10;
+    
+    while (!elemento && intentos < maxIntentos) {
+        console.log(`🔄 Intento ${intentos + 1} de ${maxIntentos}`);
+        
+        if (intentos > 0) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        elemento = buscarElementoRobusto();
         intentos++;
+        
+        if (!elemento && intentos === 3) {
+            console.log('🔍 Listando TODOS los elementos del DOM:');
+            console.log('IDs disponibles:', Array.from(document.querySelectorAll('[id]')).map(el => `${el.tagName}#${el.id}`));
+            console.log('Clases disponibles:', Array.from(document.querySelectorAll('[class]')).slice(0, 10).map(el => `${el.tagName}.${el.className}`));
+        }
     }
     
     if (!elemento) {
-        console.error('❌ ERROR CRÍTICO: No se encontró el elemento hojaDocumento después de 5 intentos');
-        console.log('🔍 Elementos disponibles en el documento:');
-        console.log(Array.from(document.querySelectorAll('[id]')).map(el => el.id));
-        
-        mostrarNotificacion('❌ Error: No se encontró el elemento del certificado', 'error');
+        console.error('❌ ERROR CRÍTICO: No se encontró el elemento después de todos los intentos');
+        mostrarNotificacion('❌ Error: No se puede encontrar el área del certificado', 'error');
         mostrarCapturaManual();
         return;
     }
     
     console.log('✅ Elemento encontrado:', elemento);
+    console.log('✅ Tipo:', elemento.tagName);
+    console.log('✅ ID:', elemento.id);
+    console.log('✅ Clases:', elemento.className);
     console.log('✅ Dimensiones:', elemento.offsetWidth, 'x', elemento.offsetHeight);
     
-    // Verificar que el elemento tenga dimensiones válidas
+    // Verificar dimensiones
     if (elemento.offsetWidth === 0 || elemento.offsetHeight === 0) {
         console.error('❌ ERROR: El elemento tiene dimensiones inválidas');
-        mostrarNotificacion('❌ Error: El elemento del certificado no tiene dimensiones válidas', 'error');
-        mostrarCapturaManual();
-        return;
+        
+        // Intentar hacer visible el elemento
+        elemento.style.display = 'block';
+        elemento.style.visibility = 'visible';
+        
+        // Esperar un momento y revisar de nuevo
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (elemento.offsetWidth === 0 || elemento.offsetHeight === 0) {
+            console.error('❌ Dimensiones siguen siendo inválidas después de intentar hacer visible');
+            mostrarNotificacion('❌ Error: El elemento del certificado no es visible', 'error');
+            mostrarCapturaManual();
+            return;
+        }
     }
     
     mostrarNotificacion('🔄 Capturando imagen...', 'info');
     
-    // Verificar que html2canvas esté disponible
+    // Verificar html2canvas
     if (typeof html2canvas === 'undefined') {
         console.error('❌ ERROR: html2canvas no está disponible');
         mostrarNotificacion('❌ Error: librería de captura no disponible', 'error');
@@ -283,7 +330,6 @@ async function capturarHoja() {
     
     console.log('✅ html2canvas está disponible');
     
-    // Método simple y directo con html2canvas
     try {
         console.log('🔄 Iniciando html2canvas...');
         
@@ -292,8 +338,8 @@ async function capturarHoja() {
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
-            logging: true,  // Activar logs para debug
-            imageTimeout: 30000,  // Aumentar timeout
+            logging: false,  // Desactivar logs internos para evitar spam
+            imageTimeout: 30000,
             removeContainer: false,
             foreignObjectRendering: false
         });
@@ -303,7 +349,6 @@ async function capturarHoja() {
         }
         
         console.log('✅ Canvas creado exitosamente:', canvas.width, 'x', canvas.height);
-        console.log('🔄 Convirtiendo canvas a blob...');
         
         canvas.toBlob(function(blob) {
             if (!blob) {
@@ -321,11 +366,7 @@ async function capturarHoja() {
     } catch (error) {
         console.error('❌ Error detallado en captura:', error);
         mostrarNotificacion(`❌ Error: ${error.message}`, 'error');
-        
-        // Mostrar método manual inmediatamente
-        setTimeout(() => {
-            mostrarCapturaManual();
-        }, 2000);
+        mostrarCapturaManual();
     }
 }
 
