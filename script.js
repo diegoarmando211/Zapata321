@@ -226,22 +226,56 @@ function limpiarFormulario() {
 async function capturarHoja() {
     console.log('=== INICIANDO CAPTURA DE IMAGEN ===');
     
-    const elemento = document.getElementById('hojaDocumento');
+    // Esperar a que el DOM esté completamente cargado
+    if (document.readyState !== 'complete') {
+        console.log('⏳ Esperando a que el DOM esté listo...');
+        await new Promise(resolve => {
+            if (document.readyState === 'complete') {
+                resolve();
+            } else {
+                window.addEventListener('load', resolve);
+            }
+        });
+    }
+    
+    console.log('🔍 Buscando elemento hojaDocumento...');
+    let elemento = document.getElementById('hojaDocumento');
+    
+    // Intentar encontrar el elemento varias veces
+    let intentos = 0;
+    while (!elemento && intentos < 5) {
+        console.log(`❌ Intento ${intentos + 1}: Elemento no encontrado, esperando...`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        elemento = document.getElementById('hojaDocumento');
+        intentos++;
+    }
     
     if (!elemento) {
-        console.error('ERROR: No se encontró el elemento hojaDocumento');
-        mostrarNotificacion('❌ No se encontró el elemento del documento', 'error');
+        console.error('❌ ERROR CRÍTICO: No se encontró el elemento hojaDocumento después de 5 intentos');
+        console.log('🔍 Elementos disponibles en el documento:');
+        console.log(Array.from(document.querySelectorAll('[id]')).map(el => el.id));
+        
+        mostrarNotificacion('❌ Error: No se encontró el elemento del certificado', 'error');
+        mostrarCapturaManual();
         return;
     }
     
     console.log('✅ Elemento encontrado:', elemento);
     console.log('✅ Dimensiones:', elemento.offsetWidth, 'x', elemento.offsetHeight);
     
+    // Verificar que el elemento tenga dimensiones válidas
+    if (elemento.offsetWidth === 0 || elemento.offsetHeight === 0) {
+        console.error('❌ ERROR: El elemento tiene dimensiones inválidas');
+        mostrarNotificacion('❌ Error: El elemento del certificado no tiene dimensiones válidas', 'error');
+        mostrarCapturaManual();
+        return;
+    }
+    
     mostrarNotificacion('🔄 Capturando imagen...', 'info');
     
     // Verificar que html2canvas esté disponible
     if (typeof html2canvas === 'undefined') {
-        console.error('ERROR: html2canvas no está disponible');
+        console.error('❌ ERROR: html2canvas no está disponible');
         mostrarNotificacion('❌ Error: librería de captura no disponible', 'error');
         mostrarCapturaManual();
         return;
