@@ -220,77 +220,176 @@ function limpiarFormulario() {
 }
 
 // ===================================
-// CAPTURA DE IMAGEN (OPTIMIZADA PARA MÓVILES)
+// CAPTURA DE IMAGEN (MÚLTIPLES MÉTODOS DE FALLBACK)
 // ===================================
 
 async function capturarHoja() {
-    try {
-        mostrarNotificacion('🔄 Capturando imagen...', 'info');
-        
-        const hojaA4 = document.getElementById('hojaDocumento');
-        
-        if (!hojaA4) {
-            throw new Error('No se encontró el elemento del documento');
-        }
-        
-        // Configuración universal más simple y compatible
-        const config = {
-            scale: window.devicePixelRatio || 1,  // Usar escala del dispositivo
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            removeContainer: false,
-            logging: false,
-            imageTimeout: 15000,  // 15 segundos timeout
-            onclone: function(clonedDoc) {
-                // Asegurar que los estilos se apliquen en el clon
-                clonedDoc.body.style.backgroundColor = '#ffffff';
-                return clonedDoc;
-            }
-        };
-        
-        const canvas = await html2canvas(hojaA4, config);
-        
-        if (!canvas) {
-            throw new Error('No se pudo crear el canvas');
-        }
-        
-        // Convertir a blob con formato universal
-        canvas.toBlob(function(blob) {
-            if (!blob) {
-                throw new Error('No se pudo generar la imagen');
-            }
-            
-            imagenCapturadaBlob = blob;
-            const url = URL.createObjectURL(blob);
-            
-            const contenedor = document.getElementById('imagenCapturada');
-            contenedor.innerHTML = `
-                <h3 style="color: #2c5aa0; margin-bottom: 15px;">📸 Imagen Capturada</h3>
-                <img src="${url}" style="max-width: 100%; height: auto; border: 2px solid #ddd; border-radius: 8px;">
-                <p style="font-size: 12px; color: #666; margin-top: 10px;">✨ Listo para enviar por WhatsApp</p>
-            `;
-            contenedor.style.display = 'block';
-            
-            document.getElementById('btnWhatsApp').style.display = 'inline-block';
-            mostrarNotificacion('✅ Imagen capturada correctamente', 'success');
-            
-            // Auto-limpiar la URL después de 5 minutos
-            setTimeout(() => {
-                if (url) URL.revokeObjectURL(url);
-            }, 300000);
-            
-        }, 'image/png', 1.0); // PNG con calidad máxima para mejor compatibilidad
-        
-    } catch (error) {
-        console.error('Error detallado al capturar imagen:', error);
-        mostrarNotificacion(`❌ Error al capturar: ${error.message}`, 'error');
-        
-        // Ofrecer método alternativo
-        setTimeout(() => {
-            mostrarNotificacion('💡 Tip: Prueba refrescando la página y capturando de nuevo', 'info');
-        }, 2000);
+    const elemento = document.getElementById('hojaDocumento');
+    
+    if (!elemento) {
+        mostrarNotificacion('❌ No se encontró el elemento del documento', 'error');
+        return;
     }
+    
+    mostrarNotificacion('🔄 Capturando imagen...', 'info');
+    
+    // Intentar múltiples métodos en orden de confiabilidad
+    const metodos = [
+        { nombre: 'dom-to-image', funcion: capturarConDomToImage },
+        { nombre: 'html2canvas', funcion: capturarConHtml2Canvas },
+        { nombre: 'canvas-manual', funcion: capturarConCanvasManual }
+    ];
+    
+    for (const metodo of metodos) {
+        try {
+            console.log(`Intentando captura con: ${metodo.nombre}`);
+            const blob = await metodo.funcion(elemento);
+            
+            if (blob) {
+                procesarImagenCapturada(blob, metodo.nombre);
+                return;
+            }
+        } catch (error) {
+            console.warn(`Error con ${metodo.nombre}:`, error);
+            continue;
+        }
+    }
+    
+    // Si todos los métodos fallan, ofrecer captura manual
+    mostrarNotificacion('❌ Error en captura automática. Mostrando método manual...', 'error');
+    mostrarCapturaManual();
+}
+
+// Método 1: dom-to-image (más confiable en móviles)
+async function capturarConDomToImage(elemento) {
+    if (typeof domtoimage === 'undefined') {
+        throw new Error('dom-to-image no está disponible');
+    }
+    
+    const options = {
+        quality: 1.0,
+        bgcolor: '#ffffff',
+        width: elemento.offsetWidth,
+        height: elemento.offsetHeight,
+        style: {
+            transform: 'scale(1)',
+            transformOrigin: 'top left'
+        }
+    };
+    
+    const dataUrl = await domtoimage.toPng(elemento, options);
+    return dataURLtoBlob(dataUrl);
+}
+
+// Método 2: html2canvas (fallback)
+async function capturarConHtml2Canvas(elemento) {
+    if (typeof html2canvas === 'undefined') {
+        throw new Error('html2canvas no está disponible');
+    }
+    
+    const canvas = await html2canvas(elemento, {
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        imageTimeout: 10000
+    });
+    
+    return new Promise((resolve) => {
+        canvas.toBlob(resolve, 'image/png', 1.0);
+    });
+}
+
+// Método 3: Canvas manual (último recurso)
+async function capturarConCanvasManual(elemento) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = elemento.offsetWidth;
+    canvas.height = elemento.offsetHeight;
+    
+    // Fondo blanco
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Agregar texto básico del certificado
+    ctx.fillStyle = '#333333';
+    ctx.font = '16px Arial';
+    
+    const nombre = document.getElementById('nombreInput').value || 'Cliente';
+    const material = document.getElementById('materialInput').value || 'Material';
+    const empresa = document.getElementById('empresaInput').value || 'Empresa';
+    const fecha = document.getElementById('fechaInput').value || new Date().toLocaleDateString();
+    
+    ctx.fillText('📋 CERTIFICADO DE ANÁLISIS', 50, 50);
+    ctx.fillText(`👤 Cliente: ${nombre}`, 50, 100);
+    ctx.fillText(`🔧 Material: ${material}`, 50, 130);
+    ctx.fillText(`🏢 Empresa: ${empresa}`, 50, 160);
+    ctx.fillText(`📅 Fecha: ${fecha}`, 50, 190);
+    ctx.fillText('✅ Certificado generado por LabMetal', 50, 240);
+    
+    return new Promise((resolve) => {
+        canvas.toBlob(resolve, 'image/png', 1.0);
+    });
+}
+
+// Procesamiento de imagen capturada
+function procesarImagenCapturada(blob, metodo) {
+    imagenCapturadaBlob = blob;
+    const url = URL.createObjectURL(blob);
+    
+    const contenedor = document.getElementById('imagenCapturada');
+    contenedor.innerHTML = `
+        <h3 style="color: #2c5aa0; margin-bottom: 15px;">📸 Imagen Capturada</h3>
+        <img src="${url}" style="max-width: 100%; height: auto; border: 2px solid #ddd; border-radius: 8px;">
+        <p style="font-size: 12px; color: #666; margin-top: 10px;">✅ Capturada con: ${metodo}</p>
+    `;
+    contenedor.style.display = 'block';
+    
+    document.getElementById('btnWhatsApp').style.display = 'inline-block';
+    mostrarNotificacion(`✅ Imagen capturada exitosamente con ${metodo}`, 'success');
+    
+    // Auto-limpiar la URL después de 5 minutos
+    setTimeout(() => {
+        if (url) URL.revokeObjectURL(url);
+    }, 300000);
+}
+
+// Método manual como último recurso
+function mostrarCapturaManual() {
+    const contenedor = document.getElementById('imagenCapturada');
+    contenedor.innerHTML = `
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #856404; margin-bottom: 15px;">📱 Captura Manual</h3>
+            <p style="color: #856404; margin-bottom: 10px;"><strong>Sigue estos pasos:</strong></p>
+            <ol style="color: #856404; text-align: left; margin-left: 20px;">
+                <li>Toma un <strong>screenshot</strong> de esta pantalla</li>
+                <li>Recorta solo la parte del certificado</li>
+                <li>Guarda la imagen en tu galería</li>
+                <li>Presiona el botón de WhatsApp abajo</li>
+                <li>Adjunta manualmente la imagen guardada</li>
+            </ol>
+            <button onclick="document.getElementById('btnWhatsApp').style.display='inline-block'" 
+                    style="background: #25D366; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin-top: 15px; cursor: pointer;">
+                📱 Continuar con WhatsApp
+            </button>
+        </div>
+    `;
+    contenedor.style.display = 'block';
+}
+
+// Función auxiliar para convertir dataURL a Blob
+function dataURLtoBlob(dataURL) {
+    const arr = dataURL.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
 }
 
 // ===================================
