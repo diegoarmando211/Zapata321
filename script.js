@@ -422,6 +422,8 @@ function mostrarCapturaManual() {
 // ===================================
 
 function compartirWhatsApp() {
+    console.log('🚀 INICIANDO ENVÍO POR WHATSAPP');
+    
     if (!clienteSeleccionado || !clienteSeleccionado.Telefono) {
         mostrarNotificacion('⚠️ Selecciona un cliente con teléfono válido', 'warning');
         return;
@@ -437,61 +439,98 @@ function compartirWhatsApp() {
         const telefono = clienteSeleccionado.Telefono.toString();
         const numeroLimpio = telefono.replace(/\D/g, '');
         
-        // Crear mensaje personalizado
+        // Crear mensaje simple
         const material = document.getElementById('materialInput').value || 'material';
-        const empresa = document.getElementById('empresaInput').value || 'su empresa';
+        const empresa = document.getElementById('empresaInput').value || 'empresa';
         const fecha = new Date().toLocaleDateString('es-ES');
         
         const mensaje = `Hola ${nombre}! 👋
 
-📋 Tu certificado de análisis de material está listo:
+📋 Certificado de análisis:
 🔧 Material: ${material}
-🏢 Empresa: ${empresa}
+🏢 Empresa: ${empresa}  
 📅 Fecha: ${fecha}
 
-Adjunto encontrarás el certificado digital.
+¡Saludos desde LabMetal! 🔬`;
 
-¡Saludos desde LabMetal! 🔬✨`;
-
-        // Crear enlace temporal para la imagen
-        const url = URL.createObjectURL(imagenCapturadaBlob);
+        console.log('📱 Detectando tipo de dispositivo...');
+        const esMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
-        // Crear un enlace de descarga temporal
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `certificado_${nombre.replace(/\s+/g, '_')}_${fecha.replace(/\//g, '-')}.jpg`;
-        
-        // En móviles, usar la API de compartir nativo si está disponible
-        if (navigator.share && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-            
-            // Convertir blob a File para compartir nativo
-            const file = new File([imagenCapturadaBlob], `certificado_${nombre}.jpg`, {
-                type: 'image/jpeg',
-                lastModified: new Date().getTime()
-            });
-            
-            navigator.share({
-                title: `Certificado para ${nombre}`,
-                text: mensaje,
-                files: [file]
-            }).then(() => {
-                mostrarNotificacion('📱 Imagen compartida exitosamente', 'success');
-                limpiarImagenTemporal();
-            }).catch((error) => {
-                console.log('Error sharing:', error);
-                // Fallback al método tradicional
-                abrirWhatsAppTradicional(numeroLimpio, mensaje, link);
-            });
-            
+        if (esMobile && navigator.share) {
+            console.log('📱 Usando API nativa de compartir móvil');
+            compartirNativoMovil(imagenCapturadaBlob, nombre, mensaje, numeroLimpio);
         } else {
-            // Para desktop o si no hay API de share nativo
-            abrirWhatsAppTradicional(numeroLimpio, mensaje, link);
+            console.log('💻 Usando método de descarga + WhatsApp Web');
+            descargarYAbrirWhatsApp(imagenCapturadaBlob, nombre, mensaje, numeroLimpio);
         }
         
     } catch (error) {
-        console.error('Error al compartir:', error);
+        console.error('❌ Error al compartir:', error);
         mostrarNotificacion('❌ Error al preparar el envío', 'error');
     }
+}
+
+// Compartir nativo en móviles
+async function compartirNativoMovil(blob, nombre, mensaje, telefono) {
+    try {
+        console.log('🔄 Preparando archivo para compartir nativo...');
+        
+        const file = new File([blob], `certificado_${nombre.replace(/\s+/g, '_')}.png`, {
+            type: 'image/png',
+            lastModified: new Date().getTime()
+        });
+        
+        console.log('📤 Abriendo menú de compartir nativo...');
+        
+        await navigator.share({
+            title: `Certificado para ${nombre}`,
+            text: mensaje,
+            files: [file]
+        });
+        
+        mostrarNotificacion('✅ Imagen compartida exitosamente', 'success');
+        limpiarImagenTemporal();
+        
+    } catch (error) {
+        console.log('❌ Error en compartir nativo, usando método alternativo:', error);
+        descargarYAbrirWhatsApp(blob, nombre, mensaje, telefono);
+    }
+}
+
+// Método para desktop/fallback
+function descargarYAbrirWhatsApp(blob, nombre, mensaje, telefono) {
+    console.log('💾 Descargando imagen automáticamente...');
+    
+    // Crear enlace de descarga
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `certificado_${nombre.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.png`;
+    
+    // Descargar automáticamente
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log('✅ Imagen descargada exitosamente');
+    mostrarNotificacion('📥 Imagen descargada automáticamente', 'success');
+    
+    // Abrir WhatsApp después de 2 segundos
+    setTimeout(() => {
+        console.log('🔄 Abriendo WhatsApp Web...');
+        const whatsappUrl = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+        window.open(whatsappUrl, '_blank');
+        
+        mostrarNotificacion(`📱 WhatsApp abierto para ${nombre}. Adjunta la imagen descargada manualmente.`, 'info');
+        
+        // Limpiar después de 1 minuto
+        setTimeout(() => {
+            limpiarImagenTemporal();
+        }, 60000);
+    }, 2000);
+    
+    // Limpiar URL object
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 function abrirWhatsAppTradicional(numeroLimpio, mensaje, linkDescarga) {
