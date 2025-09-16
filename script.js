@@ -215,6 +215,7 @@ function limpiarFormulario() {
     clienteSeleccionado = null;
     document.getElementById('imagenCapturada').style.display = 'none';
     document.getElementById('btnWhatsApp').style.display = 'none';
+    document.getElementById('btnDescargar').style.display = 'none';
     imagenCapturadaBlob = null;
     
     actualizarHoja();
@@ -227,7 +228,7 @@ function limpiarFormulario() {
 
 async function capturarHoja() {
     try {
-        const hojaA4 = document.getElementById('hojaA4');
+        const hojaA4 = document.getElementById('hojaDocumento');
         const canvas = await html2canvas(hojaA4, {
             scale: 2,
             useCORS: true,
@@ -249,6 +250,7 @@ async function capturarHoja() {
             contenedor.style.display = 'block';
             
             document.getElementById('btnWhatsApp').style.display = 'inline-block';
+            document.getElementById('btnDescargar').style.display = 'inline-block';
             mostrarNotificacion('✅ Imagen capturada correctamente', 'success');
         }, 'image/png');
         
@@ -273,15 +275,46 @@ function compartirWhatsApp() {
         return;
     }
     
-    const nombre = document.getElementById('nombreInput').value || 'cliente';
-    const telefono = clienteSeleccionado.Telefono.toString();
+    // Descargar la imagen primero
+    descargarImagen();
     
-    const mensaje = `Hola ${nombre}! Te envío el certificado de análisis de material de LabMetal. ¡Saludos!`;
-    const numeroLimpio = telefono.replace(/\D/g, '');
-    const whatsappUrl = `https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensaje)}`;
+    // Luego abrir WhatsApp
+    setTimeout(() => {
+        const nombre = document.getElementById('nombreInput').value || 'cliente';
+        const telefono = clienteSeleccionado.Telefono.toString();
+        
+        const mensaje = `Hola ${nombre}! Te envío el certificado de análisis de material de LabMetal. ¡Saludos!`;
+        const numeroLimpio = telefono.replace(/\D/g, '');
+        const whatsappUrl = `https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensaje)}`;
+        
+        window.open(whatsappUrl, '_blank');
+        mostrarNotificacion(`📱 Abriendo WhatsApp para ${nombre}. La imagen se descargó automáticamente para adjuntar manualmente.`, 'success');
+    }, 1000);
+}
+
+function descargarImagen() {
+    if (!imagenCapturadaBlob) {
+        mostrarNotificacion('⚠️ No hay imagen para descargar', 'warning');
+        return;
+    }
     
-    window.open(whatsappUrl, '_blank');
-    mostrarNotificacion(`📱 Abriendo WhatsApp para ${nombre}`, 'success');
+    const url = URL.createObjectURL(imagenCapturadaBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // Generar nombre del archivo con fecha y cliente
+    const fecha = new Date().toISOString().slice(0, 10);
+    const nombreCliente = (document.getElementById('nombreInput').value || 'cliente').replace(/\s+/g, '_');
+    link.download = `certificado_${nombreCliente}_${fecha}.png`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Limpiar URL object
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+    
+    mostrarNotificacion('📥 Imagen descargada correctamente', 'success');
 }
 
 // ===================================
