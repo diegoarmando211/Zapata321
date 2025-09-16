@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LabMetal - Acceso al Sistema</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script type="module" src="auth.js"></script>
+</head>
+<body class="login-body">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="logo-container">
+          <i class="fas fa-microscope logo-icon"></i>
+          <h1>LabMetal</h1>
+        </div>
+        <p class="login-subtitle">Sistema de Certificados Digitales</p>
+      </div>
+      
+      <div class="login-form-container">
+        <form id="login-form" class="login-form">
+          <div class="form-group">
+            <div class="input-group">
+              <i class="fas fa-envelope input-icon"></i>
+              <input 
+                type="email" 
+                id="email" 
+                class="login-input" 
+                placeholder="Correo electrónico" 
+                required
+                autocomplete="email"
+              >
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <div class="input-group">
+              <i class="fas fa-lock input-icon"></i>
+              <input 
+                type="password" 
+                id="password" 
+                class="login-input" 
+                placeholder="Contraseña" 
+                required
+                autocomplete="current-password"
+              >
+              <button type="button" class="password-toggle" onclick="togglePassword()">
+                <i class="fas fa-eye" id="password-toggle-icon"></i>
+              </button>
+            </div>
+          </div>
+          
+          <button type="button" class="login-btn" onclick="login()">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>Acceder al Sistema</span>
+          </button>
+        </form>
+        
+        <div class="login-footer">
+          <p><i class="fas fa-shield-alt"></i> Acceso seguro con Firebase Auth</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="background-animation">
+      <div class="floating-elements">
+        <div class="float-item"></div>
+        <div class="float-item"></div>
+        <div class="float-item"></div>
+        <div class="float-item"></div>
+        <div class="float-item"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function togglePassword() {
+      const passwordInput = document.getElementById('password');
+      const toggleIcon = document.getElementById('password-toggle-icon');
+      
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+      } else {
+        passwordInput.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+      }
+    }
+
+    // Permitir login con Enter
+    document.addEventListener('DOMContentLoaded', function() {
+      const inputs = document.querySelectorAll('.login-input');
+      inputs.forEach(input => {
+        input.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            login();
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
