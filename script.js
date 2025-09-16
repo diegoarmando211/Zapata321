@@ -224,114 +224,75 @@ function limpiarFormulario() {
 // ===================================
 
 async function capturarHoja() {
+    console.log('=== INICIANDO CAPTURA DE IMAGEN ===');
+    
     const elemento = document.getElementById('hojaDocumento');
     
     if (!elemento) {
+        console.error('ERROR: No se encontró el elemento hojaDocumento');
         mostrarNotificacion('❌ No se encontró el elemento del documento', 'error');
         return;
     }
     
+    console.log('✅ Elemento encontrado:', elemento);
+    console.log('✅ Dimensiones:', elemento.offsetWidth, 'x', elemento.offsetHeight);
+    
     mostrarNotificacion('🔄 Capturando imagen...', 'info');
     
-    // Intentar múltiples métodos en orden de confiabilidad
-    const metodos = [
-        { nombre: 'dom-to-image', funcion: capturarConDomToImage },
-        { nombre: 'html2canvas', funcion: capturarConHtml2Canvas },
-        { nombre: 'canvas-manual', funcion: capturarConCanvasManual }
-    ];
+    // Verificar que html2canvas esté disponible
+    if (typeof html2canvas === 'undefined') {
+        console.error('ERROR: html2canvas no está disponible');
+        mostrarNotificacion('❌ Error: librería de captura no disponible', 'error');
+        mostrarCapturaManual();
+        return;
+    }
     
-    for (const metodo of metodos) {
-        try {
-            console.log(`Intentando captura con: ${metodo.nombre}`);
-            const blob = await metodo.funcion(elemento);
-            
-            if (blob) {
-                procesarImagenCapturada(blob, metodo.nombre);
+    console.log('✅ html2canvas está disponible');
+    
+    // Método simple y directo con html2canvas
+    try {
+        console.log('🔄 Iniciando html2canvas...');
+        
+        const canvas = await html2canvas(elemento, {
+            scale: 1,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: true,  // Activar logs para debug
+            imageTimeout: 30000,  // Aumentar timeout
+            removeContainer: false,
+            foreignObjectRendering: false
+        });
+        
+        if (!canvas) {
+            throw new Error('No se pudo crear el canvas');
+        }
+        
+        console.log('✅ Canvas creado exitosamente:', canvas.width, 'x', canvas.height);
+        console.log('🔄 Convirtiendo canvas a blob...');
+        
+        canvas.toBlob(function(blob) {
+            if (!blob) {
+                console.error('❌ Error: no se pudo crear el blob');
+                mostrarNotificacion('❌ Error al generar imagen', 'error');
+                mostrarCapturaManual();
                 return;
             }
-        } catch (error) {
-            console.warn(`Error con ${metodo.nombre}:`, error);
-            continue;
-        }
+            
+            console.log('✅ Blob creado exitosamente:', blob.size, 'bytes');
+            procesarImagenCapturada(blob, 'html2canvas');
+            
+        }, 'image/png', 1.0);
+        
+    } catch (error) {
+        console.error('❌ Error detallado en captura:', error);
+        mostrarNotificacion(`❌ Error: ${error.message}`, 'error');
+        
+        // Mostrar método manual inmediatamente
+        setTimeout(() => {
+            mostrarCapturaManual();
+        }, 2000);
     }
-    
-    // Si todos los métodos fallan, ofrecer captura manual
-    mostrarNotificacion('❌ Error en captura automática. Mostrando método manual...', 'error');
-    mostrarCapturaManual();
-}
-
-// Método 1: dom-to-image (más confiable en móviles)
-async function capturarConDomToImage(elemento) {
-    if (typeof domtoimage === 'undefined') {
-        throw new Error('dom-to-image no está disponible');
-    }
-    
-    const options = {
-        quality: 1.0,
-        bgcolor: '#ffffff',
-        width: elemento.offsetWidth,
-        height: elemento.offsetHeight,
-        style: {
-            transform: 'scale(1)',
-            transformOrigin: 'top left'
-        }
-    };
-    
-    const dataUrl = await domtoimage.toPng(elemento, options);
-    return dataURLtoBlob(dataUrl);
-}
-
-// Método 2: html2canvas (fallback)
-async function capturarConHtml2Canvas(elemento) {
-    if (typeof html2canvas === 'undefined') {
-        throw new Error('html2canvas no está disponible');
-    }
-    
-    const canvas = await html2canvas(elemento, {
-        scale: 1,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        imageTimeout: 10000
-    });
-    
-    return new Promise((resolve) => {
-        canvas.toBlob(resolve, 'image/png', 1.0);
-    });
-}
-
-// Método 3: Canvas manual (último recurso)
-async function capturarConCanvasManual(elemento) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    canvas.width = elemento.offsetWidth;
-    canvas.height = elemento.offsetHeight;
-    
-    // Fondo blanco
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Agregar texto básico del certificado
-    ctx.fillStyle = '#333333';
-    ctx.font = '16px Arial';
-    
-    const nombre = document.getElementById('nombreInput').value || 'Cliente';
-    const material = document.getElementById('materialInput').value || 'Material';
-    const empresa = document.getElementById('empresaInput').value || 'Empresa';
-    const fecha = document.getElementById('fechaInput').value || new Date().toLocaleDateString();
-    
-    ctx.fillText('📋 CERTIFICADO DE ANÁLISIS', 50, 50);
-    ctx.fillText(`👤 Cliente: ${nombre}`, 50, 100);
-    ctx.fillText(`🔧 Material: ${material}`, 50, 130);
-    ctx.fillText(`🏢 Empresa: ${empresa}`, 50, 160);
-    ctx.fillText(`📅 Fecha: ${fecha}`, 50, 190);
-    ctx.fillText('✅ Certificado generado por LabMetal', 50, 240);
-    
-    return new Promise((resolve) => {
-        canvas.toBlob(resolve, 'image/png', 1.0);
-    });
 }
 
 // Procesamiento de imagen capturada
@@ -348,7 +309,7 @@ function procesarImagenCapturada(blob, metodo) {
     contenedor.style.display = 'block';
     
     document.getElementById('btnWhatsApp').style.display = 'inline-block';
-    mostrarNotificacion(`✅ Imagen capturada exitosamente con ${metodo}`, 'success');
+    mostrarNotificacion(`✅ Imagen capturada exitosamente`, 'success');
     
     // Auto-limpiar la URL después de 5 minutos
     setTimeout(() => {
@@ -379,22 +340,8 @@ function mostrarCapturaManual() {
     contenedor.style.display = 'block';
 }
 
-// Función auxiliar para convertir dataURL a Blob
-function dataURLtoBlob(dataURL) {
-    const arr = dataURL.split(',');
-    const mime = arr[0].match(/:(.*?);/)[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new Blob([u8arr], { type: mime });
-}
-
 // ===================================
 // WHATSAPP (ENVÍO DIRECTO DE IMAGEN)
-// ===================================
 // ===================================
 
 function compartirWhatsApp() {
