@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .test-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .test-button {
+            width: 100%;
+            padding: 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .error-display {
+            margin-top: 20px;
+            padding: 10px;
+            background: #ffebee;
+            border: 1px solid #f44336;
+            border-radius: 5px;
+            color: #d32f2f;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>🔧 Test de Login</h2>
+        <p>Prueba simple para verificar inputs y autenticación</p>
+        
+        <input type="email" id="test-email" class="test-input" placeholder="Correo electrónico" />
+        <input type="password" id="test-password" class="test-input" placeholder="Contraseña" />
+        <button class="test-button" onclick="testLogin()">Probar Login</button>
+        
+        <div id="error-display" class="error-display"></div>
+        
+        <div style="margin-top: 20px; font-size: 14px; color: #666;">
+            <p><strong>Diagnóstico:</strong></p>
+            <div id="diagnostic-info"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC8ZYyutzFmGzO-O9KYIANQZvl2BhQvB20",
+            authDomain: "certificados-a7d6f.firebaseapp.com",
+            projectId: "certificados-a7d6f",
+            storageBucket: "certificados-a7d6f.firebasestorage.app",
+            messagingSenderId: "414462338444",
+            appId: "1:414462338444:web:869e510428b2140d7762a9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Función de prueba global
+        window.testLogin = function() {
+            const email = document.getElementById("test-email").value;
+            const password = document.getElementById("test-password").value;
+            const errorDiv = document.getElementById("error-display");
+            const diagnosticDiv = document.getElementById("diagnostic-info");
+            
+            // Limpiar errores previos
+            errorDiv.style.display = "none";
+            
+            // Mostrar información de diagnóstico
+            diagnosticDiv.innerHTML = `
+                <p>📧 Email: ${email || '(vacío)'}</p>
+                <p>🔑 Password: ${password ? '***' + password.slice(-2) : '(vacío)'}</p>
+                <p>🔥 Firebase: ${auth ? 'Conectado' : 'Error'}</p>
+                <p>⏰ Timestamp: ${new Date().toLocaleString()}</p>
+            `;
+            
+            if (!email || !password) {
+                showError("Por favor ingresa email y contraseña");
+                return;
+            }
+            
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    alert("✅ Login exitoso! Usuario: " + userCredential.user.email);
+                    window.location.href = 'app.html';
+                })
+                .catch((error) => {
+                    console.error("Error completo:", error);
+                    showError(`Error: ${error.code} - ${error.message}`);
+                });
+        };
+        
+        function showError(message) {
+            const errorDiv = document.getElementById("error-display");
+            errorDiv.textContent = message;
+            errorDiv.style.display = "block";
+        }
+        
+        // Test de eventos de input
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('.test-input');
+            inputs.forEach((input, index) => {
+                input.addEventListener('focus', () => {
+                    console.log(`Input ${index + 1} focused`);
+                });
+                input.addEventListener('input', () => {
+                    console.log(`Input ${index + 1} value changed:`, input.value);
+                });
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        testLogin();
+                    }
+                });
+            });
+            
+            console.log("🔧 Test login page loaded successfully");
+        });
+    </script>
+</body>
+</html>

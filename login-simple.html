@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Simple</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .simple-login {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .simple-input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        .simple-input:focus {
+            border-color: #667eea;
+        }
+        
+        .simple-button {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .simple-button:hover {
+            background: #5a6fd8;
+        }
+        
+        .error-msg {
+            color: red;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="simple-login">
+        <h2 style="text-align: center; margin-bottom: 30px;">🔐 Login Simple</h2>
+        
+        <input type="email" id="email" class="simple-input" placeholder="Correo electrónico" tabindex="1">
+        <input type="password" id="password" class="simple-input" placeholder="Contraseña" tabindex="2">
+        <button class="simple-button" onclick="simpleLogin()" tabindex="3">Iniciar Sesión</button>
+        
+        <div id="error-msg" class="error-msg"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC8ZYyutzFmGzO-O9KYIANQZvl2BhQvB20",
+            authDomain: "certificados-a7d6f.firebaseapp.com",
+            projectId: "certificados-a7d6f",
+            storageBucket: "certificados-a7d6f.firebasestorage.app",
+            messagingSenderId: "414462338444",
+            appId: "1:414462338444:web:869e510428b2140d7762a9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Verificar autenticación
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.location.href = 'app.html';
+            }
+        });
+
+        window.simpleLogin = function() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const errorDiv = document.getElementById("error-msg");
+            
+            errorDiv.textContent = "";
+            
+            if (!email || !password) {
+                errorDiv.textContent = "Por favor completa todos los campos";
+                return;
+            }
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    console.log("Login exitoso:", userCredential.user.email);
+                    window.location.href = 'app.html';
+                })
+                .catch((error) => {
+                    console.error("Error de login:", error);
+                    let errorMessage = "Error al iniciar sesión";
+                    
+                    switch(error.code) {
+                        case 'auth/user-not-found':
+                            errorMessage = "Usuario no encontrado";
+                            break;
+                        case 'auth/wrong-password':
+                            errorMessage = "Contraseña incorrecta";
+                            break;
+                        case 'auth/invalid-email':
+                            errorMessage = "Email inválido";
+                            break;
+                        case 'auth/too-many-requests':
+                            errorMessage = "Demasiados intentos. Intenta más tarde";
+                            break;
+                        default:
+                            errorMessage = error.message;
+                    }
+                    
+                    errorDiv.textContent = errorMessage;
+                });
+        };
+
+        // Enter para login
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                simpleLogin();
+            }
+        });
+    </script>
+</body>
+</html>
