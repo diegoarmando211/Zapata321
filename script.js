@@ -229,32 +229,33 @@ async function capturarHoja() {
         
         const hojaA4 = document.getElementById('hojaDocumento');
         
-        // Detectar si es móvil para usar configuración optimizada
-        const esMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (!hojaA4) {
+            throw new Error('No se encontró el elemento del documento');
+        }
         
-        const config = esMobile ? {
-            scale: 1,                    // Menor escala en móviles
-            useCORS: true,
-            allowTaint: false,           // Más restrictivo para mejor compatibilidad
-            backgroundColor: '#ffffff',
-            width: hojaA4.offsetWidth,
-            height: hojaA4.offsetHeight,
-            logging: false,              // Desactivar logs para mejor rendimiento
-            removeContainer: true,       // Limpiar después de capturar
-            foreignObjectRendering: false // Mejor compatibilidad móvil
-        } : {
-            scale: 2,                    // Mayor calidad en desktop
+        // Configuración universal más simple y compatible
+        const config = {
+            scale: window.devicePixelRatio || 1,  // Usar escala del dispositivo
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
-            width: hojaA4.offsetWidth,
-            height: hojaA4.offsetHeight,
-            logging: false
+            removeContainer: false,
+            logging: false,
+            imageTimeout: 15000,  // 15 segundos timeout
+            onclone: function(clonedDoc) {
+                // Asegurar que los estilos se apliquen en el clon
+                clonedDoc.body.style.backgroundColor = '#ffffff';
+                return clonedDoc;
+            }
         };
         
         const canvas = await html2canvas(hojaA4, config);
         
-        // Convertir a blob con calidad optimizada
+        if (!canvas) {
+            throw new Error('No se pudo crear el canvas');
+        }
+        
+        // Convertir a blob con formato universal
         canvas.toBlob(function(blob) {
             if (!blob) {
                 throw new Error('No se pudo generar la imagen');
@@ -267,33 +268,34 @@ async function capturarHoja() {
             contenedor.innerHTML = `
                 <h3 style="color: #2c5aa0; margin-bottom: 15px;">📸 Imagen Capturada</h3>
                 <img src="${url}" style="max-width: 100%; height: auto; border: 2px solid #ddd; border-radius: 8px;">
-                <p style="font-size: 12px; color: #666; margin-top: 10px;">✨ Imagen temporal - se eliminará después del envío</p>
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">✨ Listo para enviar por WhatsApp</p>
             `;
             contenedor.style.display = 'block';
             
             document.getElementById('btnWhatsApp').style.display = 'inline-block';
             mostrarNotificacion('✅ Imagen capturada correctamente', 'success');
             
-            // Auto-limpiar la URL después de 5 minutos para liberar memoria
+            // Auto-limpiar la URL después de 5 minutos
             setTimeout(() => {
                 if (url) URL.revokeObjectURL(url);
             }, 300000);
             
-        }, 'image/jpeg', 0.8); // JPEG con 80% calidad para menor tamaño
+        }, 'image/png', 1.0); // PNG con calidad máxima para mejor compatibilidad
         
     } catch (error) {
-        console.error('Error al capturar imagen:', error);
-        mostrarNotificacion(`❌ Error al capturar imagen: ${error.message}`, 'error');
+        console.error('Error detallado al capturar imagen:', error);
+        mostrarNotificacion(`❌ Error al capturar: ${error.message}`, 'error');
         
-        // Si falla, ofrecer alternativa manual
+        // Ofrecer método alternativo
         setTimeout(() => {
-            mostrarNotificacion('💡 Tip: Toma un screenshot manual y comparte por WhatsApp', 'info');
+            mostrarNotificacion('💡 Tip: Prueba refrescando la página y capturando de nuevo', 'info');
         }, 2000);
     }
 }
 
 // ===================================
 // WHATSAPP (ENVÍO DIRECTO DE IMAGEN)
+// ===================================
 // ===================================
 
 function compartirWhatsApp() {
