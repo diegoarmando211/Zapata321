@@ -51,7 +51,7 @@ body {
   width: 100%;
   max-width: 400px;
   position: relative;
-  z-index: 10;
+  z-index: 100; /* Incrementado para estar sobre la animación */
 }
 
 .login-card {
@@ -61,6 +61,8 @@ body {
   overflow: hidden;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255,255,255,0.2);
+  position: relative;
+  z-index: 101; /* Asegurar que esté encima */
 }
 
 .login-header {
@@ -125,6 +127,9 @@ body {
   font-size: 16px;
   transition: var(--transition);
   background: #f8fafc;
+  position: relative;
+  z-index: 102; /* Asegurar que los inputs estén encima */
+  pointer-events: auto; /* Forzar que sean clickeables */
 }
 
 .login-input:focus {
