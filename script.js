@@ -1,5 +1,6 @@
 // ===================================
 // SISTEMA DE CERTIFICADOS DIGITALES
+// VERSIÓN: 2025-09-16-ROBUSTA-v2.0
 // ===================================
 
 // Configuración
@@ -224,7 +225,8 @@ function limpiarFormulario() {
 // ===================================
 
 async function capturarHoja() {
-    console.log('=== INICIANDO CAPTURA DE IMAGEN (VERSIÓN ROBUSTA) ===');
+    console.log('=== INICIANDO CAPTURA DE IMAGEN (VERSIÓN ROBUSTA v2.0 - 16 SEP 2025) ===');
+    console.log('🚀 SI VES ESTE MENSAJE, EL CÓDIGO NUEVO SÍ SE ESTÁ EJECUTANDO');
     
     // Función auxiliar para buscar elemento de múltiples formas
     function buscarElementoRobusto() {
