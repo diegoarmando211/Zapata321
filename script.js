@@ -225,12 +225,12 @@ function limpiarFormulario() {
 // ===================================
 
 async function capturarHoja() {
-    console.log('=== INICIANDO CAPTURA DE IMAGEN (VERSIÓN ROBUSTA v2.0 - 16 SEP 2025) ===');
-    console.log('🚀 SI VES ESTE MENSAJE, EL CÓDIGO NUEVO SÍ SE ESTÁ EJECUTANDO');
+    console.log('=== CAPTURA MÓVIL OPTIMIZADA v3.0 - 16 SEP 2025 ===');
+    console.log('� OPTIMIZADA PARA MÓVIL SIN DESCARGAS AUTOMÁTICAS');
     
-    // Función auxiliar para buscar elemento de múltiples formas
-    function buscarElementoRobusto() {
-        console.log('🔍 Buscando elemento de múltiples formas...');
+    // Función auxiliar optimizada para móvil
+    function buscarElementoMovilOptimizado() {
+        console.log('🔍 Búsqueda optimizada para móvil...');
         
         // Método 1: Por ID directo
         let elemento = document.getElementById('hojaDocumento');
@@ -239,19 +239,53 @@ async function capturarHoja() {
             return elemento;
         }
         
-        // Método 2: Por querySelector
-        elemento = document.querySelector('#hojaDocumento');
-        if (elemento) {
-            console.log('✅ Método 2: Encontrado por querySelector');
-            return elemento;
+        // Método 2: Por querySelector con múltiples intentos
+        const selectores = [
+            '#hojaDocumento',
+            '[id="hojaDocumento"]',
+            '.document-sheet',
+            '.hoja-documento',
+            'div[id*="hoja"]',
+            'div[class*="document"]'
+        ];
+        
+        for (let selector of selectores) {
+            elemento = document.querySelector(selector);
+            if (elemento && elemento.offsetWidth > 0 && elemento.offsetHeight > 0) {
+                console.log(`✅ Encontrado con selector: ${selector}`);
+                return elemento;
+            }
         }
         
-        // Método 3: Por clase
-        elemento = document.querySelector('.document-sheet');
-        if (elemento) {
-            console.log('✅ Método 3: Encontrado por clase document-sheet');
-            return elemento;
+        // Método 3: Buscar por contenido específico para móvil
+        const allDivs = document.querySelectorAll('div');
+        for (let div of allDivs) {
+            if (div.textContent && div.textContent.includes('HOJA DE REGISTRO')) {
+                if (div.offsetWidth > 200 && div.offsetHeight > 300) {
+                    console.log('✅ Método 3: Encontrado por contenido móvil');
+                    return div;
+                }
+            }
         }
+        
+        // Método 4: Buscar contenedor principal visible en móvil
+        const contenedoresPrincipales = document.querySelectorAll('main, .main, .container, .content, .app');
+        for (let contenedor of contenedoresPrincipales) {
+            const hijosGrandes = contenedor.querySelectorAll('div');
+            for (let hijo of hijosGrandes) {
+                if (hijo.offsetWidth > 250 && hijo.offsetHeight > 350 && 
+                    hijo.style.background && hijo.style.background.includes('white')) {
+                    console.log('✅ Método 4: Encontrado contenedor principal móvil');
+                    return hijo;
+                }
+            }
+        }
+        
+        console.log('❌ No se encontró elemento en móvil');
+        return null;
+    }
+    
+    // Esperar y buscar elemento con reintentos optimizados para móvil
         
         // Método 4: Buscar cualquier div que contenga "HOJA DE REGISTRO"
         const allDivs = document.querySelectorAll('div');
@@ -422,7 +456,7 @@ function mostrarCapturaManual() {
 // ===================================
 
 function compartirWhatsApp() {
-    console.log('🚀 INICIANDO ENVÍO POR WHATSAPP');
+    console.log('🚀 WHATSAPP SIN DESCARGAS - VERSIÓN 3.0');
     
     if (!clienteSeleccionado || !clienteSeleccionado.Telefono) {
         mostrarNotificacion('⚠️ Selecciona un cliente con teléfono válido', 'warning');
@@ -457,11 +491,11 @@ function compartirWhatsApp() {
         const esMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
         if (esMobile && navigator.share) {
-            console.log('📱 Usando API nativa de compartir móvil');
-            compartirNativoMovil(imagenCapturadaBlob, nombre, mensaje, numeroLimpio);
+            console.log('📱 Usando API nativa de compartir móvil (SIN DESCARGA)');
+            compartirNativoMovilSinDescarga(imagenCapturadaBlob, nombre, mensaje, numeroLimpio);
         } else {
-            console.log('💻 Usando método de descarga + WhatsApp Web');
-            descargarYAbrirWhatsApp(imagenCapturadaBlob, nombre, mensaje, numeroLimpio);
+            console.log('💻 Usando WhatsApp Web directo (SIN DESCARGA)');
+            compartirWebSinDescarga(imagenCapturadaBlob, nombre, mensaje, numeroLimpio);
         }
         
     } catch (error) {
@@ -470,17 +504,17 @@ function compartirWhatsApp() {
     }
 }
 
-// Compartir nativo en móviles
-async function compartirNativoMovil(blob, nombre, mensaje, telefono) {
+// Compartir nativo en móviles SIN DESCARGA
+async function compartirNativoMovilSinDescarga(blob, nombre, mensaje, telefono) {
     try {
-        console.log('🔄 Preparando archivo para compartir nativo...');
+        console.log('🔄 Preparando archivo para compartir nativo SIN DESCARGA...');
         
         const file = new File([blob], `certificado_${nombre.replace(/\s+/g, '_')}.png`, {
             type: 'image/png',
             lastModified: new Date().getTime()
         });
         
-        console.log('📤 Abriendo menú de compartir nativo...');
+        console.log('📤 Abriendo menú de compartir nativo (selecciona WhatsApp)...');
         
         await navigator.share({
             title: `Certificado para ${nombre}`,
@@ -488,13 +522,67 @@ async function compartirNativoMovil(blob, nombre, mensaje, telefono) {
             files: [file]
         });
         
-        mostrarNotificacion('✅ Imagen compartida exitosamente', 'success');
+        mostrarNotificacion('✅ Menú de compartir abierto - Selecciona WhatsApp', 'success');
         limpiarImagenTemporal();
         
     } catch (error) {
         console.log('❌ Error en compartir nativo, usando método alternativo:', error);
-        descargarYAbrirWhatsApp(blob, nombre, mensaje, telefono);
+        
+        // Si falla, intentar con solo texto y que el usuario adjunte manualmente
+        const whatsappUrl = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje + '\n\n📎 *Adjunta manualmente la imagen del certificado desde tu galería*')}`;
+        window.open(whatsappUrl, '_blank');
+        
+        mostrarNotificacion('📱 WhatsApp abierto - Adjunta la imagen manualmente', 'info');
     }
+}
+
+// Compartir en desktop/web SIN DESCARGA
+function compartirWebSinDescarga(blob, nombre, mensaje, telefono) {
+    try {
+        console.log('🔄 Preparando WhatsApp Web SIN DESCARGA...');
+        
+        // Crear URL temporal para mostrar la imagen
+        const imageUrl = URL.createObjectURL(blob);
+        
+        // Mostrar la imagen al usuario con instrucciones
+        const contenedor = document.getElementById('imagenCapturada');
+        contenedor.innerHTML = `
+            <div style="background: #e8f5e8; border: 2px solid #25D366; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="color: #25D366; margin-bottom: 15px;">📱 Envío por WhatsApp Web</h3>
+                <img src="${imageUrl}" style="max-width: 100%; height: auto; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 15px;">
+                <p style="color: #333; margin-bottom: 10px;"><strong>Instrucciones:</strong></p>
+                <ol style="color: #333; text-align: left; margin-left: 20px; margin-bottom: 15px;">
+                    <li>Haz clic derecho en la imagen de arriba</li>
+                    <li>Selecciona "Copiar imagen" o "Guardar imagen"</li>
+                    <li>Presiona el botón de WhatsApp abajo</li>
+                    <li>En WhatsApp Web, pega o adjunta la imagen</li>
+                </ol>
+                <button onclick="abrirWhatsAppSolo('${telefono}', '${encodeURIComponent(mensaje)}')" 
+                        style="background: #25D366; color: white; border: none; padding: 15px 25px; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                    🚀 Abrir WhatsApp Web
+                </button>
+            </div>
+        `;
+        contenedor.style.display = 'block';
+        
+        // Limpiar URL después de 10 minutos
+        setTimeout(() => {
+            if (imageUrl) URL.revokeObjectURL(imageUrl);
+        }, 600000);
+        
+        mostrarNotificacion('💻 WhatsApp Web - Sigue las instrucciones', 'info');
+        
+    } catch (error) {
+        console.error('❌ Error en WhatsApp Web:', error);
+        mostrarNotificacion('❌ Error al preparar WhatsApp Web', 'error');
+    }
+}
+
+// Función auxiliar para abrir WhatsApp solo con mensaje
+function abrirWhatsAppSolo(telefono, mensaje) {
+    const whatsappUrl = `https://wa.me/${telefono}?text=${mensaje}`;
+    window.open(whatsappUrl, '_blank');
+    mostrarNotificacion('📱 WhatsApp Web abierto - Adjunta la imagen copiada', 'success');
 }
 
 // Método para desktop/fallback
