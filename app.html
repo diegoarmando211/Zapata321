@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hoja Digital A4 - Captura y Comparte</title>
+  <title>LabMetal - Sistema de Certificados Digitales</title>
+  <meta name="description" content="Sistema profesional para generar y compartir certificados de análisis de materiales">
   <link rel="stylesheet" href="styles.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <!-- Librería principal para capturar screenshots -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <!-- Librería alternativa más confiable -->
@@ -46,28 +48,28 @@
   <div class="container">
     <!-- Panel de Control Lateral -->
     <div class="control-panel">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2>DIEGO PRO</h2>
-        <button onclick="cerrarSesion()" style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          🚪 Salir
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2><i class="fas fa-microscope"></i> LabMetal</h2>
+        <button onclick="cerrarSesion()" class="btn-outline" style="padding: 8px 15px; font-size: 0.85rem;">
+          <i class="fas fa-sign-out-alt"></i> Salir
         </button>
       </div>
       
       <!-- Estado de conexión con el sistema de clientes -->
-      <div id="estadoGoogleSheets" class="form-group" style="padding: 10px; border-radius: 8px; background: #f0f2f5; margin-bottom: 20px; text-align: center; font-size: 14px;">
-        🔄 Conectando con sistema de clientes...
+      <div id="estadoGoogleSheets" class="form-group" style="padding: 15px; border-radius: 8px; background: #f8fafc; margin-bottom: 25px; text-align: center; font-size: 14px; border: 2px solid #e2e8f0;">
+        <i class="fas fa-spinner fa-spin"></i> Conectando con sistema de clientes...
       </div>
       
       <!-- Campo Nombre con Filtro -->
-      <div class="form-group">
-        <label for="nombreInput">Nombre:</label>
-        <input type="text" id="nombreInput" class="form-input" placeholder="Escribe un nombre..." oninput="filtrarNombres()">
-        <div id="nombresFiltrados" class="filter-list" style="display: none;"></div>
+      <div class="form-group" style="position: relative;">
+        <label for="nombreInput"><i class="fas fa-user"></i> Nombre del Cliente:</label>
+        <input type="text" id="nombreInput" class="form-input" placeholder="Buscar cliente..." oninput="filtrarNombres()">
+        <div id="nombresFiltrados" class="nombres-filtrados" style="display: none;"></div>
       </div>
       
       <!-- Campo Material -->
       <div class="form-group">
-        <label for="materialInput">Material:</label>
+        <label for="materialInput"><i class="fas fa-cog"></i> Material a Analizar:</label>
         <select id="materialInput" class="form-input" onchange="actualizarHoja()">
           <option value="">Selecciona material...</option>
           <option value="Acero al Carbono">Acero al Carbono</option>
@@ -81,27 +83,32 @@
       
       <!-- Campo Empresa -->
       <div class="form-group">
-        <label for="empresaInput">Empresa:</label>
+        <label for="empresaInput"><i class="fas fa-building"></i> Empresa Cliente:</label>
         <input type="text" id="empresaInput" class="form-input" placeholder="Nombre de la empresa..." onchange="actualizarHoja()">
       </div>
       
       <!-- Campo Fecha -->
       <div class="form-group">
-        <label for="fechaInput">Fecha:</label>
+        <label for="fechaInput"><i class="fas fa-calendar-alt"></i> Fecha de Análisis:</label>
         <input type="date" id="fechaInput" class="form-input" onchange="actualizarHoja()">
       </div>
       
       <!-- Botones de Acción -->
       <div class="form-group">
-        <button class="btn btn-primary" onclick="limpiarFormulario()">🗑️ Limpiar Todo</button>
-        <button class="btn btn-warning" onclick="capturarHoja()">📸 Capturar Hoja</button>
-        <button class="btn btn-success" onclick="compartirWhatsApp()" id="btnWhatsApp" style="display: none;">📱 Enviar WhatsApp</button>
+        <button class="btn btn-warning" onclick="capturarHoja()" style="width: 100%; margin-bottom: 10px;">
+          <i class="fas fa-camera"></i> Capturar Certificado
+        </button>
+        <button class="btn btn-success" onclick="compartirWhatsApp()" id="btnWhatsApp" style="display: none; width: 100%; margin-bottom: 10px;">
+          <i class="fab fa-whatsapp"></i> Enviar por WhatsApp
+        </button>
+        <button class="btn btn-outline" onclick="limpiarFormulario()" style="width: 100%;">
+          <i class="fas fa-trash-alt"></i> Limpiar Formulario
+        </button>
       </div>
       
       <!-- Preview de imagen capturada -->
-      <div id="imagenCapturada" style="display: none;">
-        <h3>📷 Imagen Capturada:</h3>
-        <img id="previewImagen" style="width: 100%; border-radius: 8px; border: 2px solid #ddd;">
+      <div id="imagenCapturada" style="display: none; margin-top: 20px;">
+        <!-- El contenido se genera dinámicamente -->
       </div>
     </div>
     
