@@ -213,32 +213,53 @@ function limpiarFormulario() {
     document.getElementById('nombresFiltrados').style.display = 'none';
     
     clienteSeleccionado = null;
-    document.getElementById('imagenCapturada').style.display = 'none';
-    document.getElementById('btnWhatsApp').style.display = 'none';
-    document.getElementById('btnDescargar').style.display = 'none';
-    imagenCapturadaBlob = null;
+    limpiarImagenTemporal(); // Usar la nueva función de limpieza
     
     actualizarHoja();
     mostrarNotificacion('✅ Formulario limpiado correctamente', 'success');
 }
 
 // ===================================
-// CAPTURA DE IMAGEN
+// CAPTURA DE IMAGEN (OPTIMIZADA PARA MÓVILES)
 // ===================================
 
 async function capturarHoja() {
     try {
+        mostrarNotificacion('🔄 Capturando imagen...', 'info');
+        
         const hojaA4 = document.getElementById('hojaDocumento');
-        const canvas = await html2canvas(hojaA4, {
-            scale: 2,
+        
+        // Detectar si es móvil para usar configuración optimizada
+        const esMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        const config = esMobile ? {
+            scale: 1,                    // Menor escala en móviles
+            useCORS: true,
+            allowTaint: false,           // Más restrictivo para mejor compatibilidad
+            backgroundColor: '#ffffff',
+            width: hojaA4.offsetWidth,
+            height: hojaA4.offsetHeight,
+            logging: false,              // Desactivar logs para mejor rendimiento
+            removeContainer: true,       // Limpiar después de capturar
+            foreignObjectRendering: false // Mejor compatibilidad móvil
+        } : {
+            scale: 2,                    // Mayor calidad en desktop
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
             width: hojaA4.offsetWidth,
-            height: hojaA4.offsetHeight
-        });
+            height: hojaA4.offsetHeight,
+            logging: false
+        };
         
+        const canvas = await html2canvas(hojaA4, config);
+        
+        // Convertir a blob con calidad optimizada
         canvas.toBlob(function(blob) {
+            if (!blob) {
+                throw new Error('No se pudo generar la imagen');
+            }
+            
             imagenCapturadaBlob = blob;
             const url = URL.createObjectURL(blob);
             
@@ -246,22 +267,33 @@ async function capturarHoja() {
             contenedor.innerHTML = `
                 <h3 style="color: #2c5aa0; margin-bottom: 15px;">📸 Imagen Capturada</h3>
                 <img src="${url}" style="max-width: 100%; height: auto; border: 2px solid #ddd; border-radius: 8px;">
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">✨ Imagen temporal - se eliminará después del envío</p>
             `;
             contenedor.style.display = 'block';
             
             document.getElementById('btnWhatsApp').style.display = 'inline-block';
-            document.getElementById('btnDescargar').style.display = 'inline-block';
             mostrarNotificacion('✅ Imagen capturada correctamente', 'success');
-        }, 'image/png');
+            
+            // Auto-limpiar la URL después de 5 minutos para liberar memoria
+            setTimeout(() => {
+                if (url) URL.revokeObjectURL(url);
+            }, 300000);
+            
+        }, 'image/jpeg', 0.8); // JPEG con 80% calidad para menor tamaño
         
     } catch (error) {
         console.error('Error al capturar imagen:', error);
-        mostrarNotificacion('❌ Error al capturar imagen', 'error');
+        mostrarNotificacion(`❌ Error al capturar imagen: ${error.message}`, 'error');
+        
+        // Si falla, ofrecer alternativa manual
+        setTimeout(() => {
+            mostrarNotificacion('💡 Tip: Toma un screenshot manual y comparte por WhatsApp', 'info');
+        }, 2000);
     }
 }
 
 // ===================================
-// WHATSAPP
+// WHATSAPP (ENVÍO DIRECTO DE IMAGEN)
 // ===================================
 
 function compartirWhatsApp() {
@@ -275,46 +307,99 @@ function compartirWhatsApp() {
         return;
     }
     
-    // Descargar la imagen primero
-    descargarImagen();
-    
-    // Luego abrir WhatsApp
-    setTimeout(() => {
+    try {
         const nombre = document.getElementById('nombreInput').value || 'cliente';
         const telefono = clienteSeleccionado.Telefono.toString();
-        
-        const mensaje = `Hola ${nombre}! Te envío el certificado de análisis de material de LabMetal. ¡Saludos!`;
         const numeroLimpio = telefono.replace(/\D/g, '');
-        const whatsappUrl = `https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensaje)}`;
         
+        // Crear mensaje personalizado
+        const material = document.getElementById('materialInput').value || 'material';
+        const empresa = document.getElementById('empresaInput').value || 'su empresa';
+        const fecha = new Date().toLocaleDateString('es-ES');
+        
+        const mensaje = `Hola ${nombre}! 👋
+
+📋 Tu certificado de análisis de material está listo:
+🔧 Material: ${material}
+🏢 Empresa: ${empresa}
+📅 Fecha: ${fecha}
+
+Adjunto encontrarás el certificado digital.
+
+¡Saludos desde LabMetal! 🔬✨`;
+
+        // Crear enlace temporal para la imagen
+        const url = URL.createObjectURL(imagenCapturadaBlob);
+        
+        // Crear un enlace de descarga temporal
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `certificado_${nombre.replace(/\s+/g, '_')}_${fecha.replace(/\//g, '-')}.jpg`;
+        
+        // En móviles, usar la API de compartir nativo si está disponible
+        if (navigator.share && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            
+            // Convertir blob a File para compartir nativo
+            const file = new File([imagenCapturadaBlob], `certificado_${nombre}.jpg`, {
+                type: 'image/jpeg',
+                lastModified: new Date().getTime()
+            });
+            
+            navigator.share({
+                title: `Certificado para ${nombre}`,
+                text: mensaje,
+                files: [file]
+            }).then(() => {
+                mostrarNotificacion('📱 Imagen compartida exitosamente', 'success');
+                limpiarImagenTemporal();
+            }).catch((error) => {
+                console.log('Error sharing:', error);
+                // Fallback al método tradicional
+                abrirWhatsAppTradicional(numeroLimpio, mensaje, link);
+            });
+            
+        } else {
+            // Para desktop o si no hay API de share nativo
+            abrirWhatsAppTradicional(numeroLimpio, mensaje, link);
+        }
+        
+    } catch (error) {
+        console.error('Error al compartir:', error);
+        mostrarNotificacion('❌ Error al preparar el envío', 'error');
+    }
+}
+
+function abrirWhatsAppTradicional(numeroLimpio, mensaje, linkDescarga) {
+    // Descargar imagen automáticamente
+    document.body.appendChild(linkDescarga);
+    linkDescarga.click();
+    document.body.removeChild(linkDescarga);
+    
+    // Abrir WhatsApp con mensaje
+    const whatsappUrl = `https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensaje)}`;
+    
+    setTimeout(() => {
         window.open(whatsappUrl, '_blank');
-        mostrarNotificacion(`📱 Abriendo WhatsApp para ${nombre}. La imagen se descargó automáticamente para adjuntar manualmente.`, 'success');
+        mostrarNotificacion('� WhatsApp abierto. Adjunta manualmente la imagen descargada', 'success');
+        
+        // Limpiar después de 30 segundos
+        setTimeout(() => {
+            limpiarImagenTemporal();
+        }, 30000);
     }, 1000);
 }
 
-function descargarImagen() {
-    if (!imagenCapturadaBlob) {
-        mostrarNotificacion('⚠️ No hay imagen para descargar', 'warning');
-        return;
+function limpiarImagenTemporal() {
+    if (imagenCapturadaBlob) {
+        // Limpiar blob de memoria
+        imagenCapturadaBlob = null;
+        
+        // Ocultar preview
+        document.getElementById('imagenCapturada').style.display = 'none';
+        document.getElementById('btnWhatsApp').style.display = 'none';
+        
+        mostrarNotificacion('🗑️ Imagen temporal eliminada de memoria', 'info');
     }
-    
-    const url = URL.createObjectURL(imagenCapturadaBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    
-    // Generar nombre del archivo con fecha y cliente
-    const fecha = new Date().toISOString().slice(0, 10);
-    const nombreCliente = (document.getElementById('nombreInput').value || 'cliente').replace(/\s+/g, '_');
-    link.download = `certificado_${nombreCliente}_${fecha}.png`;
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Limpiar URL object
-    setTimeout(() => URL.revokeObjectURL(url), 100);
-    
-    mostrarNotificacion('📥 Imagen descargada correctamente', 'success');
 }
 
 // ===================================
