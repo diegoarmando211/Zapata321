@@ -247,8 +247,8 @@ async function generarPDF() {
     
     try {
         // Cargar ambas imágenes como base64
-        const logoLeftUrl = await cargarImagenComoBase64('img/Imagen de WhatsApp 2025-09-28 a las 20.49.20_7ddfaf59.jpg');
-        const logoRightUrl = await cargarImagenComoBase64('img/Imagen de WhatsApp 2025-09-28 a las 20.49.59_8d92c335.jpg');
+        const logoLeftUrl = await cargarImagenComoBase64('./img/logo-labmetal.jpg');
+        const logoRightUrl = await cargarImagenComoBase64('./img/logo-servicios.jpg');
         
         // Crear nuevo documento PDF
         const { jsPDF } = window.jsPDF;
