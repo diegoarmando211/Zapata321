@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test PDF - LabMetal</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Librería para generar PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Panel de Control Lateral -->
+        <div class="control-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2><i class="fas fa-microscope"></i> LabMetal (Test PDF)</h2>
+            </div>
+            
+            <!-- Estado de conexión con el sistema de clientes -->
+            <div id="estadoGoogleSheets" class="form-group" style="padding: 15px; border-radius: 8px; background: #f8fafc; margin-bottom: 25px; text-align: center; font-size: 14px; border: 2px solid #e2e8f0;">
+                <i class="fas fa-spinner fa-spin"></i> Conectando con sistema de clientes...
+            </div>
+            
+            <!-- Campo Nombre con Filtro -->
+            <div class="form-group" style="position: relative;">
+                <label for="nombreInput"><i class="fas fa-user"></i> Nombre del Cliente:</label>
+                <input type="text" id="nombreInput" class="form-input" placeholder="Buscar cliente..." oninput="filtrarNombres()" value="FERNANDO LOYOLA">
+                <div id="nombresFiltrados" class="nombres-filtrados" style="display: none;"></div>
+            </div>
+            
+            <!-- Campo Material -->
+            <div class="form-group">
+                <label for="materialInput"><i class="fas fa-cog"></i> Material a Analizar:</label>
+                <select id="materialInput" class="form-input" onchange="actualizarHoja()">
+                    <option value="Polvo de Óxido" selected>Polvo de Óxido</option>
+                    <option value="Acero al Carbono">Acero al Carbono</option>
+                    <option value="Acero Inoxidable">Acero Inoxidable</option>
+                    <option value="Aluminio">Aluminio</option>
+                    <option value="Cobre">Cobre</option>
+                    <option value="Hierro Fundido">Hierro Fundido</option>
+                    <option value="Titanio">Titanio</option>
+                </select>
+            </div>
+            
+            <!-- Campo Empresa -->
+            <div class="form-group">
+                <label for="empresaInput"><i class="fas fa-building"></i> Empresa Cliente:</label>
+                <input type="text" id="empresaInput" class="form-input" placeholder="Nombre de la empresa..." onchange="actualizarHoja()" value="Empresa de Prueba">
+            </div>
+            
+            <!-- Campo Fecha -->
+            <div class="form-group">
+                <label for="fechaInput"><i class="fas fa-calendar-alt"></i> Fecha de Análisis:</label>
+                <input type="date" id="fechaInput" class="form-input" onchange="actualizarHoja()">
+            </div>
+            
+            <!-- Botones de Acción -->
+            <div class="form-group">
+                <button class="btn btn-warning" onclick="generarPDF()" style="width: 100%; margin-bottom: 10px;">
+                    <i class="fas fa-file-pdf"></i> Generar PDF
+                </button>
+                <button class="btn btn-outline" onclick="limpiarFormulario()" style="width: 100%;">
+                    <i class="fas fa-trash-alt"></i> Limpiar Formulario
+                </button>
+            </div>
+            
+            <!-- Preview del PDF generado -->
+            <div id="pdfGenerado" style="display: none; margin-top: 20px;">
+                <!-- El contenido se genera dinámicamente -->
+            </div>
+        </div>
+        
+        <!-- Certificado A4 Digital -->
+        <div class="document-sheet" id="hojaDocumento">
+            <!-- Encabezado con logo y empresa -->
+            <div class="certificate-header">
+                <div class="logo-section">
+                    <div class="logo-container">
+                        <img src="img/LOGOLABMETAL.png" alt="LabMetal Logo" class="logo-image">
+                        <div class="company-info">
+                            <div class="company-name">LABMETAL SAC</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="services-section">
+                    <div class="header-decoration"></div>
+                    <div class="services-text">Análisis de Minerales: Oro - Plata - Cobre - Precipitados</div>
+                    <div class="services-text">Concentrados - Carbón Activado - Soluciones Cianuradas</div>
+                    <div class="phone-numbers">☎ 962 815 323 - 944 115 680</div>
+                </div>
+            </div>
+            
+            <!-- Título del certificado -->
+            <div class="certificate-title">CERTIFICADO DE ANALISIS</div>
+            
+            <!-- Información del cliente -->
+            <div class="client-info">
+                <div class="info-row">
+                    <span class="info-label">CLIENTE</span>
+                    <span class="info-value" id="displayNombre">FERNANDO LOYOLA</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">REFERENCIA</span>
+                    <span class="info-value" id="displayReferencia">A - 20-09-2025</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">SOLICITUD DE ANALISIS</span>
+                    <span class="info-value" id="displaySolicitud">Newmont - Au</span>
+                </div>
+            </div>
+            
+            <!-- Recepción de muestra -->
+            <div class="sample-reception">
+                <div class="section-title">RECEPCION DE MUESTRA</div>
+                <div class="reception-info">
+                    <div class="reception-row">
+                        <span class="reception-label">MATERIAL</span>
+                        <span class="reception-value" id="displayMaterial">Polvo de Óxido</span>
+                    </div>
+                    <div class="reception-row">
+                        <span class="reception-label">CODIGO</span>
+                        <span class="reception-value" id="displayCodigo">PO</span>
+                    </div>
+                    <div class="reception-row">
+                        <span class="reception-label">CONDICIONES Y CARACTERISTICAS</span>
+                        <span class="reception-value">Muestra en Bolsa Cerrada</span>
+                    </div>
+                    <div class="reception-row">
+                        <span class="reception-label">FECHA DE RECEPCION</span>
+                        <span class="reception-value" id="displayFecha">sábado, 20 de Septiembre de 2025</span>
+                    </div>
+                    <div class="reception-row">
+                        <span class="reception-label">% H₂O</span>
+                        <span class="reception-value">:</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabla de resultados -->
+            <div class="results-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th rowspan="2">CODIGO</th>
+                            <th rowspan="2">DESCRIPCION</th>
+                            <th colspan="2">RESULTADO Au</th>
+                        </tr>
+                        <tr>
+                            <th>MALLA + 150 Au (Gr/Tm)</th>
+                            <th>MALLA - 150 Au (Gr/Tm)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td id="tableCodigo">PO</td>
+                            <td>ELIO</td>
+                            <td id="resultado1">2.011</td>
+                            <td id="resultado2">8.324</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- Resultados adicionales -->
+                <div class="additional-results">
+                    <table class="small-table">
+                        <tr>
+                            <th>Au (Gr/Tm)</th>
+                            <th>Au(Oz/Tc)</th>
+                        </tr>
+                        <tr>
+                            <td id="resultadoGr">10.335</td>
+                            <td id="resultadoOz">0.301</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Fecha y observaciones -->
+            <div class="certificate-date">
+                <span id="fechaCompleta">domingo, 21 de Septiembre de 2025</span>
+            </div>
+            
+            <!-- Observaciones -->
+            <div class="observations">
+                <div class="obs-title">OBSERVACIONES</div>
+                <div class="obs-text">• Documento con registro y sello de seguridad para evitar su adulteración</div>
+                <div class="obs-text">• Método Empleado: Fire assay Analysis</div>
+                <div class="obs-text">• Los resultados solo corresponden a la muestra indicada en el presente certificado</div>
+            </div>
+            
+            <!-- Firma y sello -->
+            <div class="signature-section">
+                <div class="observations">
+                    <div class="obs-title">OBSERVACIONES</div>
+                    <div class="obs-text">• Documento con registro y sello de seguridad para evitar su adulteración</div>
+                    <div class="obs-text">• Método Empleado: Fire assay Analysis</div>
+                    <div class="obs-text">• Los resultados solo corresponden a la muestra indicada en el presente certificado</div>
+                </div>
+                <div class="signature-area">
+                    <div class="company-seal">
+                        <div class="seal-circle">
+                            <div class="seal-inner">
+                                <div class="seal-text-top">LABORATORIO DE ANÁLISIS</div>
+                                <div class="seal-center">LabMetal</div>
+                                <div class="seal-text-bottom">LAS LOMAS - PIURA - PERÚ</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="signature-info">
+                        <div class="signature-line"></div>
+                        <div class="signature-name">Dorman Zapata Granda</div>
+                        <div class="signature-title">Asistente de Laboratorio</div>
+                        <div class="signature-company">Labmetal SAC</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pie de página -->
+            <div class="footer-info">
+                <div class="footer-text">Oficina Principal:</div>
+                <div class="footer-text">Calle Ayacucho Nro. 100 Santa Rosa</div>
+                <div class="footer-text">Las Lomas - Piura</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales para compatibilidad
+        let clientes = [];
+        let clienteSeleccionado = null;
+        const CLIENTES_JSON_URL = './clientes.json';
+
+        // ===================================
+        // INICIALIZACIÓN
+        // ===================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fechaInput').value = hoy;
+            
+            // Cargar clientes
+            await cargarClientes();
+            
+            actualizarHoja();
+        });
+
+        // ===================================
+        // CARGA DE CLIENTES
+        // ===================================
+        async function cargarClientes() {
+            try {
+                actualizarEstado('🔄 Cargando clientes...', 'loading');
+                
+                const response = await fetch(CLIENTES_JSON_URL + '?v=' + Date.now());
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.clientes || !Array.isArray(data.clientes)) {
+                    throw new Error('Formato de JSON inválido');
+                }
+                
+                clientes = data.clientes;
+                actualizarEstado(`✅ ${clientes.length} clientes cargados correctamente`, 'success');
+                
+            } catch (error) {
+                console.error('Error al cargar clientes:', error);
+                actualizarEstado('❌ Error al cargar clientes', 'error');
+                clientes = [];
+            }
+        }
+
+        function actualizarEstado(mensaje, tipo) {
+            const elemento = document.getElementById('estadoGoogleSheets');
+            if (!elemento) return;
+            
+            elemento.textContent = mensaje;
+            elemento.className = 'form-group';
+            
+            const estilos = {
+                loading: { background: '#e3f2fd', color: '#1976d2', border: '2px solid #bbdefb' },
+                success: { background: '#e8f5e8', color: '#2e7d32', border: '2px solid #c8e6c9' },
+                error: { background: '#ffebee', color: '#c62828', border: '2px solid #ffcdd2' },
+                warning: { background: '#fff8e1', color: '#f57c00', border: '2px solid #ffecb3' }
+            };
+            
+            const estilo = estilos[tipo] || { background: '#f0f2f5', color: '#666', border: '2px solid #ddd' };
+            Object.assign(elemento.style, estilo);
+        }
+
+        // ===================================
+        // FILTRADO DE CLIENTES
+        // ===================================
+        function filtrarNombres() {
+            const input = document.getElementById('nombreInput');
+            const filtro = input.value.toLowerCase().trim();
+            const contenedor = document.getElementById('nombresFiltrados');
+            
+            if (filtro.length < 2) {
+                contenedor.style.display = 'none';
+                clienteSeleccionado = null;
+                return;
+            }
+            
+            const clientesFiltrados = clientes.filter(cliente => 
+                cliente.NombreCliente.toLowerCase().includes(filtro)
+            );
+            
+            if (clientesFiltrados.length === 0) {
+                contenedor.style.display = 'none';
+                return;
+            }
+            
+            contenedor.innerHTML = clientesFiltrados.slice(0, 5).map(cliente => `
+                <div class="nombre-opcion" onclick="seleccionarCliente('${cliente.NombreCliente}', ${cliente.Telefono}, '${cliente.empresa}')">
+                    <strong>${cliente.NombreCliente}</strong><br>
+                    <small>${cliente.empresa} - ${cliente.Telefono}</small>
+                </div>
+            `).join('');
+            
+            contenedor.style.display = 'block';
+        }
+
+        function seleccionarCliente(nombre, telefono, empresa) {
+            document.getElementById('nombreInput').value = nombre;
+            document.getElementById('empresaInput').value = empresa;
+            document.getElementById('nombresFiltrados').style.display = 'none';
+            
+            clienteSeleccionado = { NombreCliente: nombre, Telefono: telefono, empresa: empresa };
+            actualizarHoja();
+            mostrarNotificacion(`✅ Cliente seleccionado: ${nombre}`, 'success');
+        }
+
+        // ===================================
+        // FUNCIONES DE ACTUALIZACIÓN
+        // ===================================
+        function actualizarHoja() {
+            const nombre = document.getElementById('nombreInput').value || 'Sin especificar';
+            const material = document.getElementById('materialInput').value || 'Polvo de Óxido';
+            const fecha = document.getElementById('fechaInput').value || new Date().toISOString().split('T')[0];
+            
+            // Actualizar campos principales del certificado
+            document.getElementById('displayNombre').textContent = nombre;
+            document.getElementById('displayMaterial').textContent = material;
+            
+            // Generar y actualizar referencia
+            const referencia = generarReferencia();
+            document.getElementById('displayReferencia').textContent = referencia;
+            
+            // Generar código basado en material
+            const codigo = generarCodigo(material);
+            document.getElementById('displayCodigo').textContent = codigo;
+            document.getElementById('tableCodigo').textContent = codigo;
+            
+            // Formatear fecha para recepción
+            const fechaFormateada = formatearFecha(fecha);
+            document.getElementById('displayFecha').textContent = fechaFormateada;
+            
+            // Actualizar fecha completa del certificado
+            const fechaCompleta = formatearFechaCompleta(new Date());
+            document.getElementById('fechaCompleta').textContent = fechaCompleta;
+            
+            // Generar valores de análisis aleatorios (simulación)
+            generarResultadosAnalisis();
+        }
+
+        function limpiarFormulario() {
+            document.getElementById('nombreInput').value = '';
+            document.getElementById('empresaInput').value = '';
+            document.getElementById('materialInput').value = '';
+            document.getElementById('fechaInput').value = new Date().toISOString().split('T')[0];
+            
+            limpiarPDFTemporal();
+            actualizarHoja();
+            mostrarNotificacion('✅ Formulario limpiado correctamente', 'success');
+        }
+
+        function limpiarPDFTemporal() {
+            if (window.pdfGenerado) {
+                window.pdfGenerado = null;
+                window.nombreArchivoPDF = null;
+                document.getElementById('pdfGenerado').style.display = 'none';
+            }
+        }
+
+        function mostrarNotificacion(mensaje, tipo) {
+            console.log(mensaje);
+        }
+
+    </script>
+    <style>
+        .nombres-filtrados {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .nombre-opcion {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+
+        .nombre-opcion:hover {
+            background-color: #f0f8ff;
+        }
+
+        .nombre-opcion:last-child {
+            border-bottom: none;
+        }
+
+        .nombre-opcion strong {
+            color: #333;
+            font-size: 14px;
+        }
+
+        .nombre-opcion small {
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+    <script src="script.js?v=20250928"></script>
+</body>
+</html>

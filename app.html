@@ -7,10 +7,8 @@
   <meta name="description" content="Sistema profesional para generar y compartir certificados de análisis de materiales">
   <link rel="stylesheet" href="styles.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <!-- Librería principal para capturar screenshots -->
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <!-- Librería alternativa más confiable -->
-  <script src="https://cdn.jsdelivr.net/npm/dom-to-image@2.6.0/dist/dom-to-image.min.js"></script>
+  <!-- Librería para generar PDFs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <!-- Firebase Auth -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -95,8 +93,8 @@
       
       <!-- Botones de Acción -->
       <div class="form-group">
-        <button class="btn btn-warning" onclick="capturarHoja()" style="width: 100%; margin-bottom: 10px;">
-          <i class="fas fa-camera"></i> Capturar Certificado
+        <button class="btn btn-warning" onclick="generarPDF()" style="width: 100%; margin-bottom: 10px;">
+          <i class="fas fa-file-pdf"></i> Generar PDF
         </button>
         <button class="btn btn-success" onclick="compartirWhatsApp()" id="btnWhatsApp" style="display: none; width: 100%; margin-bottom: 10px;">
           <i class="fab fa-whatsapp"></i> Enviar por WhatsApp
@@ -106,57 +104,156 @@
         </button>
       </div>
       
-      <!-- Preview de imagen capturada -->
-      <div id="imagenCapturada" style="display: none; margin-top: 20px;">
+      <!-- Preview del PDF generado -->
+      <div id="pdfGenerado" style="display: none; margin-top: 20px;">
         <!-- El contenido se genera dinámicamente -->
       </div>
     </div>
     
-    <!-- Hoja A4 Digital -->
+    <!-- Certificado A4 Digital -->
     <div class="document-sheet" id="hojaDocumento">
-      <div class="sheet-header">
-        <div class="sheet-title">📋 HOJA DE REGISTRO</div>
-        <div class="sheet-subtitle">Sistema Digital de Captura</div>
+            <!-- Encabezado con logo y empresa -->
+            <div class="certificate-header">
+                <div class="logo-section">
+                    <div class="logo-container">
+                        <img src="img/LOGOLABMETAL.png" alt="LabMetal Logo" class="logo-image">
+                        <div class="company-info">
+                            <div class="company-name">LABMETAL SAC</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="services-section">
+                    <div class="header-decoration"></div>
+                    <div class="services-text">Análisis de Minerales: Oro - Plata - Cobre - Precipitados</div>
+                    <div class="services-text">Concentrados - Carbón Activado - Soluciones Cianuradas</div>
+                    <div class="phone-numbers">☎ 962 815 323 - 944 115 680</div>
+                </div>
+            </div>      <!-- Título del certificado -->
+      <div class="certificate-title">CERTIFICADO DE ANALISIS</div>
+      
+      <!-- Información del cliente -->
+      <div class="client-info">
+        <div class="info-row">
+          <span class="info-label">CLIENTE</span>
+          <span class="info-value" id="displayNombre">Sin especificar</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">REFERENCIA</span>
+          <span class="info-value" id="displayReferencia">A - 20-09-2025</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">SOLICITUD DE ANALISIS</span>
+          <span class="info-value" id="displaySolicitud">Newmont - Au</span>
+        </div>
       </div>
       
-      <div class="sheet-content">
-        <div class="data-row">
-          <span class="data-label">👤 Nombre:</span>
-          <span class="data-value" id="displayNombre">Sin especificar</span>
-        </div>
-        
-        <div class="data-row">
-          <span class="data-label">🏢 Empresa:</span>
-          <span class="data-value" id="displayEmpresa">Sin especificar</span>
-        </div>
-        
-        <div class="data-row">
-          <span class="data-label">⚙️ Material:</span>
-          <span class="data-value" id="displayMaterial">Sin especificar</span>
-        </div>
-        
-        <div class="data-row">
-          <span class="data-label">📅 Fecha:</span>
-          <span class="data-value" id="displayFecha">Sin especificar</span>
-        </div>
-        
-        <div class="materials-section">
-          <div class="materials-title">🔧 DETALLES ADICIONALES</div>
-          <div class="material-item">
-            <strong>🔍 Estado del Material:</strong> <span id="estadoMaterial">Por evaluar</span>
+      <!-- Recepción de muestra -->
+      <div class="sample-reception">
+        <div class="section-title">RECEPCION DE MUESTRA</div>
+        <div class="reception-info">
+          <div class="reception-row">
+            <span class="reception-label">MATERIAL</span>
+            <span class="reception-value" id="displayMaterial">Polvo de Óxido</span>
           </div>
-          <div class="material-item">
-            <strong>📊 Código de Referencia:</strong> <span id="codigoRef">-</span>
+          <div class="reception-row">
+            <span class="reception-label">CODIGO</span>
+            <span class="reception-value" id="displayCodigo">PO</span>
           </div>
-          <div class="material-item">
-            <strong>💼 Responsable:</strong> <span id="responsable">LabMetal</span>
+          <div class="reception-row">
+            <span class="reception-label">CONDICIONES Y CARACTERISTICAS</span>
+            <span class="reception-value">Muestra en Bolsa Cerrada</span>
           </div>
-        </div>
+                    <div class="reception-row">
+                        <span class="reception-label">FECHA DE RECEPCION</span>
+                        <span class="reception-value" id="displayFecha">sábado, 20 de Septiembre de 2025</span>
+                    </div>
+                    <div class="reception-row">
+                        <span class="reception-label">% H₂O</span>
+                        <span class="reception-value">:</span>
+                    </div>
+                </div>
+            </div>      <!-- Tabla de resultados -->
+      <div class="results-table">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2">CODIGO</th>
+              <th rowspan="2">DESCRIPCION</th>
+              <th colspan="2">RESULTADO Au</th>
+            </tr>
+            <tr>
+              <th>MALLA + 150 Au (Gr/Tm)</th>
+              <th>MALLA - 150 Au (Gr/Tm)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td id="tableCodigo">PO</td>
+              <td>ELIO</td>
+              <td id="resultado1">2.011</td>
+              <td id="resultado2">8.324</td>
+            </tr>
+          </tbody>
+        </table>
         
-        <div class="sheet-footer">
-          <p>📍 Documento generado digitalmente • <span id="horaGeneracion"></span></p>
-          <p>🔒 Sistema de Captura Digital A4</p>
+        <!-- Resultados adicionales -->
+        <div class="additional-results">
+          <table class="small-table">
+            <tr>
+              <th>Au (Gr/Tm)</th>
+              <th>Au(Oz/Tc)</th>
+            </tr>
+            <tr>
+              <td id="resultadoGr">10.335</td>
+              <td id="resultadoOz">0.301</td>
+            </tr>
+          </table>
         </div>
+      </div>
+      
+      <!-- Fecha y observaciones -->
+      <div class="certificate-date">
+        <span id="fechaCompleta">domingo, 21 de Septiembre de 2025</span>
+      </div>
+      
+      <!-- Observaciones -->
+      <div class="observations">
+        <div class="obs-title">OBSERVACIONES</div>
+        <div class="obs-text">• Documento con registro y sello de seguridad para evitar su adulteración</div>
+        <div class="obs-text">• Método Empleado: Fire assay Analysis</div>
+        <div class="obs-text">• Los resultados solo corresponden a la muestra indicada en el presente certificado</div>
+      </div>
+      
+            <!-- Firma y sello -->
+            <div class="signature-section">
+                <div class="observations">
+                    <div class="obs-title">OBSERVACIONES</div>
+                    <div class="obs-text">• Documento con registro y sello de seguridad para evitar su adulteración</div>
+                    <div class="obs-text">• Método Empleado: Fire assay Analysis</div>
+                    <div class="obs-text">• Los resultados solo corresponden a la muestra indicada en el presente certificado</div>
+                </div>
+                <div class="signature-area">
+                    <div class="company-seal">
+                        <div class="seal-circle">
+                            <div class="seal-inner">
+                                <div class="seal-text-top">LABORATORIO DE ANÁLISIS</div>
+                                <div class="seal-center">LabMetal</div>
+                                <div class="seal-text-bottom">LAS LOMAS - PIURA - PERÚ</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="signature-info">
+                        <div class="signature-line"></div>
+                        <div class="signature-name">Dorman Zapata Granda</div>
+                        <div class="signature-title">Asistente de Laboratorio</div>
+                        <div class="signature-company">Labmetal SAC</div>
+                    </div>
+                </div>
+            </div>      <!-- Pie de página -->
+      <div class="footer-info">
+        <div class="footer-text">Oficina Principal:</div>
+        <div class="footer-text">Calle Ayacucho Nro. 100 Santa Rosa</div>
+        <div class="footer-text">Las Lomas - Piura</div>
       </div>
     </div>
   </div>

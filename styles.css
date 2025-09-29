@@ -636,12 +636,7 @@ body {
   max-width: 210mm; /* A4 width */
   margin: 0 auto;
   padding: 20mm;
-  
-  /* Simular papel real */
-  background-image: 
-    linear-gradient(90deg, transparent 24px, #f8f9fa 25px, #f8f9fa 26px, transparent 27px),
-    linear-gradient(#f1f3f4 1px, transparent 1px);
-  background-size: 30px 30px;
+  font-family: Arial, sans-serif;
 }
 
 /* Encabezado de la hoja */
@@ -1110,5 +1105,349 @@ body {
     background: #4a5568;
     border-color: #4a5568;
     color: #e2e8f0;
+  }
+}
+
+/* ===================================
+   ESTILOS PARA CERTIFICADO DE ANÁLISIS
+   =================================== */
+
+.certificate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  position: relative;
+}
+
+.logo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 400px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.logo-image {
+  width: 100%;
+  max-width: 350px;
+  height: auto;
+  object-fit: contain;
+}
+
+.logo-box {
+  width: 80px;
+  height: 60px;
+  background: #1e40af;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  margin-right: 15px;
+}
+
+.company-info {
+  display: none; /* Ocultar el texto ya que el logo lo incluye */
+}
+
+.company-name {
+  font-size: 20px;
+  font-weight: bold;
+  color: #000;
+  font-family: Arial, sans-serif;
+  border-bottom: 2px solid #000;
+  padding-bottom: 2px;
+  margin-bottom: 5px;
+}
+
+.services-section {
+  flex: 1;
+  text-align: right;
+  padding-left: 20px;
+  position: relative;
+}
+
+.header-decoration {
+  position: absolute;
+  right: 0;
+  top: -10px;
+  width: 200px;
+  height: 40px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #92400e 100%);
+  border-radius: 20px;
+  opacity: 0.3;
+}
+
+.services-text {
+  font-size: 11px;
+  color: #1e40af;
+  margin-bottom: 2px;
+  font-weight: 500;
+  font-family: Arial, sans-serif;
+}
+
+.phone-numbers {
+  font-size: 12px;
+  font-weight: bold;
+  color: #1e40af;
+  margin-top: 8px;
+  background: white;
+  border: 1px solid #1e40af;
+  border-radius: 15px;
+  padding: 3px 8px;
+  display: inline-block;
+}
+
+.certificate-title {
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+  background: #f3f4f6;
+  border: 1px solid #000;
+  padding: 8px;
+  margin-bottom: 20px;
+}
+
+.client-info {
+  margin-bottom: 20px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.info-label {
+  width: 200px;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.info-value {
+  flex: 1;
+  border-bottom: 1px dotted #666;
+  padding-bottom: 2px;
+}
+
+.sample-reception {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: underline;
+  margin-bottom: 10px;
+}
+
+.reception-info {
+  margin-left: 20px;
+}
+
+.reception-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+
+.reception-label {
+  width: 250px;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.reception-value {
+  flex: 1;
+  border-bottom: 1px dotted #666;
+  padding-bottom: 1px;
+}
+
+.results-table {
+  margin: 20px 0;
+}
+
+.results-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.results-table th,
+.results-table td {
+  border: 1px solid #000;
+  padding: 8px;
+  text-align: center;
+}
+
+.results-table th {
+  background: #f3f4f6;
+  font-weight: bold;
+}
+
+.additional-results {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.small-table {
+  border-collapse: collapse;
+}
+
+.small-table th,
+.small-table td {
+  border: 1px solid #000;
+  padding: 6px 12px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.small-table th {
+  background: #f3f4f6;
+  font-weight: bold;
+}
+
+.certificate-date {
+  text-align: right;
+  font-size: 12px;
+  margin: 20px 0;
+  font-style: italic;
+}
+
+.observations {
+  margin: 20px 0;
+}
+
+.obs-title {
+  font-size: 12px;
+  font-weight: bold;
+  text-decoration: underline;
+  margin-bottom: 5px;
+}
+
+.obs-text {
+  font-size: 11px;
+  margin-bottom: 3px;
+  line-height: 1.4;
+}
+
+.signature-section {
+  margin: 30px 0;
+  border-top: 1px solid #ccc;
+  padding-top: 20px;
+}
+
+.signature-area {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 20px;
+}
+
+.signature-info {
+  text-align: center;
+  flex: 1;
+}
+
+.signature-line {
+  width: 200px;
+  height: 1px;
+  background: #000;
+  margin: 0 auto 5px;
+}
+
+.signature-name {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+.signature-title {
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+
+.signature-company {
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.company-seal {
+  display: flex;
+  align-items: center;
+  margin-right: 50px;
+}
+
+.seal-circle {
+  width: 100px;
+  height: 100px;
+  border: 3px solid #000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: white;
+}
+
+.seal-inner {
+  text-align: center;
+  width: 90%;
+}
+
+.seal-text-top {
+  font-size: 8px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  transform: rotate(-10deg);
+}
+
+.seal-center {
+  font-size: 14px;
+  font-weight: bold;
+  margin: 5px 0;
+}
+
+.seal-text-bottom {
+  font-size: 8px;
+  font-weight: bold;
+  margin-top: 5px;
+  transform: rotate(10deg);
+}
+
+.footer-info {
+  text-align: center;
+  font-size: 10px;
+  color: #666;
+  border-top: 1px solid #ccc;
+  padding-top: 10px;
+}
+
+.footer-text {
+  margin-bottom: 2px;
+}
+
+/* Ajustes para impresión/PDF */
+@media print {
+  .document-sheet {
+    min-height: auto;
+    box-shadow: none;
+    margin: 0;
+    padding: 15mm;
+    background-image: none;
   }
 }

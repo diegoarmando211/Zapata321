@@ -8,7 +8,7 @@ const CLIENTES_JSON_URL = './clientes.json';
 
 // Variables globales
 let clientes = [];
-let imagenCapturadaBlob = null;
+let pdfGeneradoBlob = null;
 let clienteSeleccionado = null;
 
 // ===================================
@@ -164,37 +164,48 @@ function seleccionarCliente(cliente) {
 function actualizarHoja() {
     const nombre = document.getElementById('nombreInput').value || 'Sin especificar';
     const empresa = document.getElementById('empresaInput').value || 'Sin especificar';
-    const material = document.getElementById('materialInput').value || 'Sin especificar';
-    const fecha = document.getElementById('fechaInput').value || 'Sin especificar';
+    const material = document.getElementById('materialInput').value || 'Polvo de Óxido';
+    const fecha = document.getElementById('fechaInput').value || new Date().toISOString().split('T')[0];
     
-    // Actualizar campos en la hoja
+    // Actualizar campos principales del certificado
     document.getElementById('displayNombre').textContent = nombre;
-    document.getElementById('displayEmpresa').textContent = empresa;
     document.getElementById('displayMaterial').textContent = material;
     
-    // Formatear fecha
-    if (fecha !== 'Sin especificar') {
-        const fechaFormateada = new Date(fecha).toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-        document.getElementById('displayFecha').textContent = fechaFormateada;
-    } else {
-        document.getElementById('displayFecha').textContent = 'Sin especificar';
-    }
+    // Generar y actualizar referencia
+    const referencia = generarReferencia();
+    document.getElementById('displayReferencia').textContent = referencia;
     
-    // Generar código de referencia único
-    if (nombre !== 'Sin especificar' && material !== 'Sin especificar') {
-        const codigo = generarCodigoReferencia(nombre, material);
-        document.getElementById('codigoRef').textContent = codigo;
-        document.getElementById('estadoMaterial').textContent = 'Registrado y pendiente de análisis';
-    } else {
-        document.getElementById('codigoRef').textContent = '-';
-        document.getElementById('estadoMaterial').textContent = 'Por evaluar';
-    }
+    // Actualizar solicitud de análisis (fijo por ahora)
+    document.getElementById('displaySolicitud').textContent = 'Newmont - Au';
     
-    mostrarHoraGeneracion();
+    // Generar código basado en material
+    const codigo = generarCodigo(material);
+    document.getElementById('displayCodigo').textContent = codigo;
+    document.getElementById('tableCodigo').textContent = codigo;
+    
+    // Formatear fecha para recepción
+    const fechaFormateada = formatearFecha(fecha);
+    document.getElementById('displayFecha').textContent = fechaFormateada;
+    
+    // Actualizar fecha completa del certificado
+    const fechaCompleta = formatearFechaCompleta(new Date());
+    document.getElementById('fechaCompleta').textContent = fechaCompleta;
+    
+    // Generar valores de análisis aleatorios (simulación)
+    generarResultadosAnalisis();
+}
+
+function generarResultadosAnalisis() {
+    // Generar valores aleatorios pero consistentes para simulación
+    const resultado1 = (Math.random() * 5 + 1).toFixed(3); // Entre 1 y 6
+    const resultado2 = (Math.random() * 10 + 5).toFixed(3); // Entre 5 y 15
+    const resultadoGr = (parseFloat(resultado1) + parseFloat(resultado2)).toFixed(3);
+    const resultadoOz = (parseFloat(resultadoGr) * 0.029).toFixed(3); // Conversión aproximada
+    
+    document.getElementById('resultado1').textContent = resultado1;
+    document.getElementById('resultado2').textContent = resultado2;
+    document.getElementById('resultadoGr').textContent = resultadoGr;
+    document.getElementById('resultadoOz').textContent = resultadoOz;
 }
 
 function generarCodigoReferencia(nombre, material) {
@@ -214,211 +225,418 @@ function limpiarFormulario() {
     document.getElementById('nombresFiltrados').style.display = 'none';
     
     clienteSeleccionado = null;
-    limpiarImagenTemporal(); // Usar la nueva función de limpieza
+    limpiarPDFTemporal(); // Usar la nueva función de limpieza
     
     actualizarHoja();
     mostrarNotificacion('✅ Formulario limpiado correctamente', 'success');
 }
 
 // ===================================
-// CAPTURA DE IMAGEN (MÚLTIPLES MÉTODOS DE FALLBACK)
+// GENERACIÓN DE PDF
 // ===================================
 
-async function capturarHoja() {
-    console.log('=== INICIANDO CAPTURA DE IMAGEN (VERSIÓN ROBUSTA v2.0 - 16 SEP 2025) ===');
-    console.log('🚀 SI VES ESTE MENSAJE, EL CÓDIGO NUEVO SÍ SE ESTÁ EJECUTANDO');
+async function generarPDF() {
+    console.log('=== INICIANDO GENERACIÓN DE PDF ===');
     
-    // Función auxiliar para buscar elemento de múltiples formas
-    function buscarElementoRobusto() {
-        console.log('🔍 Buscando elemento de múltiples formas...');
-        
-        // Método 1: Por ID directo
-        let elemento = document.getElementById('hojaDocumento');
-        if (elemento) {
-            console.log('✅ Método 1: Encontrado por ID directo');
-            return elemento;
-        }
-        
-        // Método 2: Por querySelector
-        elemento = document.querySelector('#hojaDocumento');
-        if (elemento) {
-            console.log('✅ Método 2: Encontrado por querySelector');
-            return elemento;
-        }
-        
-        // Método 3: Por clase
-        elemento = document.querySelector('.document-sheet');
-        if (elemento) {
-            console.log('✅ Método 3: Encontrado por clase document-sheet');
-            return elemento;
-        }
-        
-        // Método 4: Buscar cualquier div que contenga "HOJA DE REGISTRO"
-        const allDivs = document.querySelectorAll('div');
-        for (let div of allDivs) {
-            if (div.textContent && div.textContent.includes('HOJA DE REGISTRO')) {
-                console.log('✅ Método 4: Encontrado por contenido de texto');
-                return div.closest('.document-sheet') || div.parentElement;
-            }
-        }
-        
-        console.log('❌ No se encontró el elemento por ningún método');
-        return null;
-    }
-    
-    // Esperar y buscar elemento
-    let elemento = null;
-    let intentos = 0;
-    const maxIntentos = 10;
-    
-    while (!elemento && intentos < maxIntentos) {
-        console.log(`🔄 Intento ${intentos + 1} de ${maxIntentos}`);
-        
-        if (intentos > 0) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-        
-        elemento = buscarElementoRobusto();
-        intentos++;
-        
-        if (!elemento && intentos === 3) {
-            console.log('🔍 Listando TODOS los elementos del DOM:');
-            console.log('IDs disponibles:', Array.from(document.querySelectorAll('[id]')).map(el => `${el.tagName}#${el.id}`));
-            console.log('Clases disponibles:', Array.from(document.querySelectorAll('[class]')).slice(0, 10).map(el => `${el.tagName}.${el.className}`));
-        }
-    }
-    
-    if (!elemento) {
-        console.error('❌ ERROR CRÍTICO: No se encontró el elemento después de todos los intentos');
-        mostrarNotificacion('❌ Error: No se puede encontrar el área del certificado', 'error');
-        mostrarCapturaManual();
+    // Validar que jsPDF esté disponible
+    if (typeof window.jsPDF === 'undefined') {
+        console.error('❌ jsPDF no está disponible');
+        mostrarNotificacion('❌ Error: Librería PDF no disponible', 'error');
         return;
     }
-    
-    console.log('✅ Elemento encontrado:', elemento);
-    console.log('✅ Tipo:', elemento.tagName);
-    console.log('✅ ID:', elemento.id);
-    console.log('✅ Clases:', elemento.className);
-    console.log('✅ Dimensiones:', elemento.offsetWidth, 'x', elemento.offsetHeight);
-    
-    // Verificar dimensiones
-    if (elemento.offsetWidth === 0 || elemento.offsetHeight === 0) {
-        console.error('❌ ERROR: El elemento tiene dimensiones inválidas');
-        
-        // Intentar hacer visible el elemento
-        elemento.style.display = 'block';
-        elemento.style.visibility = 'visible';
-        
-        // Esperar un momento y revisar de nuevo
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        if (elemento.offsetWidth === 0 || elemento.offsetHeight === 0) {
-            console.error('❌ Dimensiones siguen siendo inválidas después de intentar hacer visible');
-            mostrarNotificacion('❌ Error: El elemento del certificado no es visible', 'error');
-            mostrarCapturaManual();
-            return;
-        }
-    }
-    
-    mostrarNotificacion('🔄 Capturando imagen...', 'info');
-    
-    // Verificar html2canvas
-    if (typeof html2canvas === 'undefined') {
-        console.error('❌ ERROR: html2canvas no está disponible');
-        mostrarNotificacion('❌ Error: librería de captura no disponible', 'error');
-        mostrarCapturaManual();
-        return;
-    }
-    
-    console.log('✅ html2canvas está disponible');
     
     try {
-        console.log('🔄 Iniciando html2canvas...');
+        // Cargar logo como base64
+        const logoDataUrl = await cargarImagenComoBase64('img/LOGOLABMETAL.png');
         
-        const canvas = await html2canvas(elemento, {
-            scale: 1,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            logging: false,  // Desactivar logs internos para evitar spam
-            imageTimeout: 30000,
-            removeContainer: false,
-            foreignObjectRendering: false
-        });
+        // Crear nuevo documento PDF
+        const { jsPDF } = window.jsPDF;
+        const doc = new jsPDF('p', 'mm', 'a4');
         
-        if (!canvas) {
-            throw new Error('No se pudo crear el canvas');
+        // Obtener datos del formulario
+        const nombre = document.getElementById('nombreInput').value || 'Sin especificar';
+        const empresa = document.getElementById('empresaInput').value || 'Sin especificar';
+        const material = document.getElementById('materialInput').value || 'Sin especificar';
+        const fecha = document.getElementById('fechaInput').value || new Date().toISOString().split('T')[0];
+        
+        // Generar referencia y código
+        const referencia = generarReferencia();
+        const codigo = generarCodigo(material);
+        
+        // Configurar fuente
+        doc.setFont('helvetica');
+        
+        // Encabezado con logo real (más grande)
+        if (logoDataUrl) {
+            doc.addImage(logoDataUrl, 'PNG', 15, 15, 80, 25);
+        } else {
+            // Fallback al logo texto si no se puede cargar la imagen
+            doc.setFillColor(30, 64, 175);
+            doc.rect(15, 15, 25, 18, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.setFont('helvetica', 'bold');
+            doc.text('LM', 27.5, 26.5, { align: 'center' });
+            
+            // Nombre de la empresa con línea inferior (solo si no hay logo)
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('LABMETAL SAC', 45, 25);
+            doc.setLineWidth(1);
+            doc.line(45, 27, 95, 27);
         }
         
-        console.log('✅ Canvas creado exitosamente:', canvas.width, 'x', canvas.height);
+        // Solo los servicios si el logo no los incluye ya
+        if (!logoDataUrl) {
+            // Decoración dorada (simulada con color amarillo)
+            doc.setFillColor(245, 158, 11);
+            doc.ellipse(170, 20, 15, 5, 'F');
+            
+            // Servicios y teléfonos (lado derecho)
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Análisis de Minerales: Oro - Plata - Cobre - Precipitados', 190, 18, { align: 'right' });
+            doc.text('Concentrados - Carbón Activado - Soluciones Cianuradas', 190, 22, { align: 'right' });
+            
+            // Teléfonos con marco
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.rect(150, 25, 40, 6);
+            doc.text('☎ 962 815 323 - 944 115 680', 170, 28.5, { align: 'center' });
+        }
         
-        canvas.toBlob(function(blob) {
-            if (!blob) {
-                console.error('❌ Error: no se pudo crear el blob');
-                mostrarNotificacion('❌ Error al generar imagen', 'error');
-                mostrarCapturaManual();
-                return;
-            }
-            
-            console.log('✅ Blob creado exitosamente:', blob.size, 'bytes');
-            procesarImagenCapturada(blob, 'html2canvas');
-            
-        }, 'image/png', 1.0);
+        // Línea separadora
+        doc.setLineWidth(0.5);
+        doc.line(15, 40, 195, 40);
+        
+        // Título del certificado
+        doc.setFillColor(243, 244, 246);
+        doc.rect(15, 45, 180, 10, 'F');
+        doc.setLineWidth(0.3);
+        doc.rect(15, 45, 180, 10);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('CERTIFICADO DE ANALISIS', 105, 51.5, { align: 'center' });
+        
+        // Información del cliente
+        let yPos = 65;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        
+        // Cliente
+        doc.text('CLIENTE', 20, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`: ${nombre}`, 75, yPos);
+        doc.setLineWidth(0.1);
+        doc.setLineDashPattern([1, 1], 0);
+        doc.line(80, yPos + 1, 190, yPos + 1);
+        
+        yPos += 8;
+        doc.setFont('helvetica', 'bold');
+        doc.text('REFERENCIA', 20, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`: ${referencia}`, 75, yPos);
+        doc.line(80, yPos + 1, 190, yPos + 1);
+        
+        yPos += 8;
+        doc.setFont('helvetica', 'bold');
+        doc.text('SOLICITUD DE ANALISIS', 20, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(': Newmont - Au', 75, yPos);
+        doc.line(80, yPos + 1, 190, yPos + 1);
+        
+        // Sección Recepción de Muestra
+        yPos += 15;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text('RECEPCION DE MUESTRA', 20, yPos);
+        
+        yPos += 10;
+        doc.setFontSize(10);
+        
+        // Material
+        doc.text('MATERIAL', 25, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`: ${material}`, 75, yPos);
+        doc.line(80, yPos + 1, 190, yPos + 1);
+        
+        yPos += 8;
+        doc.setFont('helvetica', 'bold');
+        doc.text('CODIGO', 25, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`: ${codigo}`, 75, yPos);
+        doc.line(80, yPos + 1, 190, yPos + 1);
+        
+        yPos += 8;
+        doc.setFont('helvetica', 'bold');
+        doc.text('CONDICIONES Y CARACTERISTICAS', 25, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(': Muestra en Bolsa Cerrada', 75, yPos);
+        doc.line(80, yPos + 1, 190, yPos + 1);
+        
+        yPos += 8;
+        doc.setFont('helvetica', 'bold');
+        doc.text('FECHA DE RECEPCION', 25, yPos);
+        doc.setFont('helvetica', 'normal');
+        const fechaFormateada = formatearFecha(fecha);
+        doc.text(`: ${fechaFormateada}`, 75, yPos);
+        doc.line(80, yPos + 1, 190, yPos + 1);
+
+        yPos += 8;
+        doc.setFont('helvetica', 'bold');
+        doc.text('% H₂O', 25, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(':', 75, yPos);
+        doc.line(80, yPos + 1, 190, yPos + 1);
+        
+        // Tabla de resultados
+        yPos += 20;
+        
+        // Encabezados de tabla
+        doc.setLineDashPattern([], 0); // Sin líneas punteadas
+        doc.setLineWidth(0.3);
+        
+        // Fila de encabezados principal
+        doc.rect(20, yPos, 30, 15);
+        doc.rect(50, yPos, 50, 15);
+        doc.rect(100, yPos, 45, 7.5);
+        doc.rect(145, yPos, 45, 7.5);
+        
+        // Sub-encabezados
+        doc.rect(100, yPos + 7.5, 45, 7.5);
+        doc.rect(145, yPos + 7.5, 45, 7.5);
+        
+        // Texto de encabezados
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('CODIGO', 35, yPos + 9, { align: 'center' });
+        doc.text('DESCRIPCION', 75, yPos + 9, { align: 'center' });
+        doc.text('RESULTADO Au', 122.5, yPos + 4, { align: 'center' });
+        doc.text('MALLA + 150 Au', 122.5, yPos + 11, { align: 'center' });
+        doc.text('(Gr/Tm)', 122.5, yPos + 13.5, { align: 'center' });
+        doc.text('MALLA - 150 Au', 167.5, yPos + 11, { align: 'center' });
+        doc.text('(Gr/Tm)', 167.5, yPos + 13.5, { align: 'center' });
+        
+        // Fila de datos
+        yPos += 15;
+        doc.rect(20, yPos, 30, 12);
+        doc.rect(50, yPos, 50, 12);
+        doc.rect(100, yPos, 45, 12);
+        doc.rect(145, yPos, 45, 12);
+        
+        doc.setFont('helvetica', 'normal');
+        doc.text(codigo, 35, yPos + 7, { align: 'center' });
+        doc.text('ELIO', 75, yPos + 7, { align: 'center' });
+        doc.text('2.011', 122.5, yPos + 7, { align: 'center' });
+        doc.text('8.324', 167.5, yPos + 7, { align: 'center' });
+        
+        // Tabla adicional de resultados
+        yPos += 20;
+        doc.rect(80, yPos, 30, 8);
+        doc.rect(110, yPos, 30, 8);
+        doc.rect(80, yPos + 8, 30, 8);
+        doc.rect(110, yPos + 8, 30, 8);
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text('Au (Gr/Tm)', 95, yPos + 5, { align: 'center' });
+        doc.text('Au(Oz/Tc)', 125, yPos + 5, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.text('10.335', 95, yPos + 13, { align: 'center' });
+        doc.text('0.301', 125, yPos + 13, { align: 'center' });
+        
+        // Fecha del certificado
+        yPos += 25;
+        const fechaCompleta = formatearFechaCompleta(new Date());
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'italic');
+        doc.text(fechaCompleta, 190, yPos, { align: 'right' });
+        
+        // Observaciones
+        yPos += 15;
+        doc.setFont('helvetica', 'bold');
+        doc.text('OBSERVACIONES', 20, yPos);
+        
+        yPos += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text('• Documento con registro y sello de seguridad para evitar su adulteración', 20, yPos);
+        yPos += 4;
+        doc.text('• Método Empleado: Fire assay Analysis', 20, yPos);
+        yPos += 4;
+        doc.text('• Los resultados solo corresponden a la muestra indicada en el presente certificado', 20, yPos);
+        
+        // Línea de firma
+        yPos += 20;
+        doc.setLineWidth(0.3);
+        doc.line(20, yPos, 195, yPos);
+        
+        // Información de firma
+        yPos += 10;
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Dorman Zapata Granda', 40, yPos, { align: 'center' });
+        yPos += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.text('Asistente de Laboratorio', 40, yPos, { align: 'center' });
+        yPos += 4;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Labmetal SAC', 40, yPos, { align: 'center' });
+        
+        // Sello circular profesional
+        doc.setLineWidth(1);
+        doc.circle(165, yPos - 10, 15);
+        doc.setFontSize(6);
+        doc.text('LABORATORIO DE ANÁLISIS', 165, yPos - 18, { align: 'center' });
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('LabMetal', 165, yPos - 10, { align: 'center' });
+        doc.setFontSize(6);
+        doc.setFont('helvetica', 'normal');
+        doc.text('LAS LOMAS - PIURA - PERÚ', 165, yPos - 2, { align: 'center' });
+        
+        // Pie de página
+        yPos += 15;
+        doc.setLineWidth(0.2);
+        doc.line(20, yPos, 190, yPos);
+        yPos += 5;
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Oficina Principal:', 105, yPos, { align: 'center' });
+        yPos += 3;
+        doc.text('Calle Ayacucho Nro. 100 Santa Rosa', 105, yPos, { align: 'center' });
+        yPos += 3;
+        doc.text('Las Lomas - Piura', 105, yPos, { align: 'center' });
+        
+        // Generar nombre de archivo
+        const nombreArchivo = `Certificado_${nombre.replace(/\s+/g, '_')}_${referencia}.pdf`;
+        
+        // Mostrar preview y habilitar WhatsApp
+        mostrarPreviewPDF(doc, nombreArchivo);
+        
+        console.log('✅ PDF generado exitosamente');
+        mostrarNotificacion('✅ PDF generado correctamente', 'success');
         
     } catch (error) {
-        console.error('❌ Error detallado en captura:', error);
-        mostrarNotificacion(`❌ Error: ${error.message}`, 'error');
-        mostrarCapturaManual();
+        console.error('❌ Error al generar PDF:', error);
+        mostrarNotificacion(`❌ Error al generar PDF: ${error.message}`, 'error');
     }
 }
 
-// Procesamiento de imagen capturada
-function procesarImagenCapturada(blob, metodo) {
-    imagenCapturadaBlob = blob;
-    const url = URL.createObjectURL(blob);
-    
-    const contenedor = document.getElementById('imagenCapturada');
-    contenedor.innerHTML = `
-        <h3 style="color: #2c5aa0; margin-bottom: 15px;">📸 Imagen Capturada</h3>
-        <img src="${url}" style="max-width: 100%; height: auto; border: 2px solid #ddd; border-radius: 8px;">
-        <p style="font-size: 12px; color: #666; margin-top: 10px;">✅ Capturada con: ${metodo}</p>
-    `;
-    contenedor.style.display = 'block';
-    
-    document.getElementById('btnWhatsApp').style.display = 'inline-block';
-    mostrarNotificacion(`✅ Imagen capturada exitosamente`, 'success');
-    
-    // Auto-limpiar la URL después de 5 minutos
-    setTimeout(() => {
-        if (url) URL.revokeObjectURL(url);
-    }, 300000);
+// ===================================
+// FUNCIONES AUXILIARES PARA PDF
+// ===================================
+
+async function cargarImagenComoBase64(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = this.width;
+            canvas.height = this.height;
+            ctx.drawImage(this, 0, 0);
+            const dataURL = canvas.toDataURL('image/png');
+            resolve(dataURL);
+        };
+        img.onerror = function() {
+            console.error('Error cargando imagen:', src);
+            resolve(null); // Retornar null si hay error
+        };
+        img.src = src;
+    });
 }
 
-// Método manual como último recurso
-function mostrarCapturaManual() {
-    const contenedor = document.getElementById('imagenCapturada');
+function generarReferencia() {
+    const fecha = new Date();
+    const dia = fecha.getDate().toString().padStart(2, '0');
+    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+    const año = fecha.getFullYear();
+    return `A - ${dia}-${mes}-${año}`;
+}
+
+function generarCodigo(material) {
+    const codigos = {
+        'Acero al Carbono': 'AC',
+        'Acero Inoxidable': 'AI',
+        'Aluminio': 'AL',
+        'Cobre': 'CU',
+        'Hierro Fundido': 'HF',
+        'Titanio': 'TI'
+    };
+    return codigos[material] || 'PO';
+}
+
+function formatearFecha(fecha) {
+    const fechaObj = new Date(fecha);
+    const opciones = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    };
+    return fechaObj.toLocaleDateString('es-ES', opciones);
+}
+
+function formatearFechaCompleta(fecha) {
+    const opciones = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    };
+    return fecha.toLocaleDateString('es-ES', opciones);
+}
+
+function mostrarPreviewPDF(doc, nombreArchivo) {
+    // Guardar referencia del PDF para WhatsApp
+    window.pdfGenerado = doc;
+    window.nombreArchivoPDF = nombreArchivo;
+    
+    const contenedor = document.getElementById('pdfGenerado');
     contenedor.innerHTML = `
-        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <h3 style="color: #856404; margin-bottom: 15px;">📱 Captura Manual</h3>
-            <p style="color: #856404; margin-bottom: 10px;"><strong>Sigue estos pasos:</strong></p>
-            <ol style="color: #856404; text-align: left; margin-left: 20px;">
-                <li>Toma un <strong>screenshot</strong> de esta pantalla</li>
-                <li>Recorta solo la parte del certificado</li>
-                <li>Guarda la imagen en tu galería</li>
-                <li>Presiona el botón de WhatsApp abajo</li>
-                <li>Adjunta manualmente la imagen guardada</li>
-            </ol>
-            <button onclick="document.getElementById('btnWhatsApp').style.display='inline-block'" 
-                    style="background: #25D366; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin-top: 15px; cursor: pointer;">
-                📱 Continuar con WhatsApp
+        <h3 style="color: #2c5aa0; margin-bottom: 15px;">📄 PDF Generado</h3>
+        <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e9ecef;">
+            <i class="fas fa-file-pdf" style="font-size: 48px; color: #dc3545; margin-bottom: 10px;"></i>
+            <p style="font-weight: bold; margin-bottom: 10px;">${nombreArchivo}</p>
+            <button onclick="descargarPDF()" class="btn btn-primary" style="margin-right: 10px;">
+                <i class="fas fa-download"></i> Descargar PDF
+            </button>
+            <button onclick="previsualizarPDF()" class="btn btn-outline">
+                <i class="fas fa-eye"></i> Vista Previa
             </button>
         </div>
     `;
     contenedor.style.display = 'block';
+    
+    document.getElementById('btnWhatsApp').style.display = 'inline-block';
+}
+
+function descargarPDF() {
+    if (window.pdfGenerado && window.nombreArchivoPDF) {
+        window.pdfGenerado.save(window.nombreArchivoPDF);
+        mostrarNotificacion('✅ PDF descargado', 'success');
+    }
+}
+
+function previsualizarPDF() {
+    if (window.pdfGenerado) {
+        const pdfBlob = window.pdfGenerado.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+        
+        // Limpiar URL después de 5 minutos
+        setTimeout(() => {
+            URL.revokeObjectURL(pdfUrl);
+        }, 300000);
+    }
 }
 
 // ===================================
-// WHATSAPP (ENVÍO DIRECTO DE IMAGEN)
+// WHATSAPP (ENVÍO DIRECTO DE PDF)
 // ===================================
 
 function compartirWhatsApp() {
@@ -429,8 +647,8 @@ function compartirWhatsApp() {
         return;
     }
     
-    if (!imagenCapturadaBlob) {
-        mostrarNotificacion('⚠️ Primero debes capturar la imagen', 'warning');
+    if (!window.pdfGenerado) {
+        mostrarNotificacion('⚠️ Primero debes generar el PDF', 'warning');
         return;
     }
     
@@ -456,12 +674,15 @@ function compartirWhatsApp() {
         console.log('📱 Detectando tipo de dispositivo...');
         const esMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
+        // Generar PDF como blob
+        const pdfBlob = window.pdfGenerado.output('blob');
+        
         if (esMobile && navigator.share) {
             console.log('📱 Usando API nativa de compartir móvil');
-            compartirNativoMovil(imagenCapturadaBlob, nombre, mensaje, numeroLimpio);
+            compartirNativoMovilPDF(pdfBlob, nombre, mensaje, numeroLimpio);
         } else {
             console.log('💻 Usando método de descarga + WhatsApp Web');
-            descargarYAbrirWhatsApp(imagenCapturadaBlob, nombre, mensaje, numeroLimpio);
+            descargarYAbrirWhatsAppPDF(pdfBlob, nombre, mensaje, numeroLimpio);
         }
         
     } catch (error) {
@@ -470,34 +691,78 @@ function compartirWhatsApp() {
     }
 }
 
-// Compartir nativo en móviles
-async function compartirNativoMovil(blob, nombre, mensaje, telefono) {
+// Compartir nativo en móviles con PDF
+async function compartirNativoMovilPDF(blob, nombre, mensaje, telefono) {
     try {
-        console.log('🔄 Preparando archivo para compartir nativo...');
+        console.log('🔄 Preparando PDF para compartir nativo...');
         
-        const file = new File([blob], `certificado_${nombre.replace(/\s+/g, '_')}.png`, {
-            type: 'image/png',
+        const file = new File([blob], `certificado_${nombre.replace(/\s+/g, '_')}.pdf`, {
+            type: 'application/pdf',
             lastModified: new Date().getTime()
         });
         
         console.log('📤 Abriendo menú de compartir nativo...');
         
         await navigator.share({
-            title: `Certificado para ${nombre}`,
+            title: `Certificado de Análisis - ${nombre}`,
             text: mensaje,
             files: [file]
         });
         
-        mostrarNotificacion('✅ Imagen compartida exitosamente', 'success');
-        limpiarImagenTemporal();
+        mostrarNotificacion('✅ PDF compartido exitosamente', 'success');
+        limpiarPDFTemporal();
         
     } catch (error) {
         console.log('❌ Error en compartir nativo, usando método alternativo:', error);
-        descargarYAbrirWhatsApp(blob, nombre, mensaje, telefono);
+        descargarYAbrirWhatsAppPDF(blob, nombre, mensaje, telefono);
     }
 }
 
-// Método para desktop/fallback
+// Método para desktop/fallback con PDF
+function descargarYAbrirWhatsAppPDF(blob, nombre, mensaje, telefono) {
+    console.log('💻 Preparando WhatsApp con PDF...');
+    
+    // Crear link de descarga para el PDF
+    const url = URL.createObjectURL(blob);
+    const nombreArchivo = `certificado_${nombre.replace(/\s+/g, '_')}.pdf`;
+    
+    // Mostrar instrucciones con enlace de descarga
+    const contenedor = document.getElementById('pdfGenerado');
+    contenedor.innerHTML = `
+        <div style="background: #e8f5e8; border: 2px solid #25D366; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #25D366; margin-bottom: 15px;">📱 Envío por WhatsApp</h3>
+            <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 15px;">
+                <i class="fas fa-file-pdf" style="font-size: 48px; color: #dc3545; margin-bottom: 10px;"></i>
+                <p style="font-weight: bold; margin-bottom: 10px;">${nombreArchivo}</p>
+                <a href="${url}" download="${nombreArchivo}" 
+                   style="background: #dc3545; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px; display: inline-block; margin-bottom: 10px;">
+                    <i class="fas fa-download"></i> Descargar PDF
+                </a>
+            </div>
+            <p style="color: #333; margin-bottom: 10px;"><strong>📋 Instrucciones:</strong></p>
+            <ol style="color: #333; text-align: left; margin-left: 20px; margin-bottom: 15px;">
+                <li><strong>Descarga el PDF</strong> haciendo clic en el botón de arriba</li>
+                <li>Presiona <strong>"Abrir WhatsApp"</strong> abajo</li>
+                <li>En WhatsApp, haz clic en el <strong>📎 (clip)</strong> para adjuntar</li>
+                <li>Selecciona <strong>"Documento"</strong> y busca el PDF descargado</li>
+            </ol>
+            <button onclick="abrirSoloWhatsApp('${telefono}', '${encodeURIComponent(mensaje)}')" 
+                    style="background: #25D366; color: white; border: none; padding: 15px 25px; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%;">
+                🚀 Abrir WhatsApp Web
+            </button>
+        </div>
+    `;
+    contenedor.style.display = 'block';
+    
+    mostrarNotificacion('📄 PDF listo - Sigue las instrucciones para enviar por WhatsApp', 'info');
+    
+    // Limpiar URL después de 10 minutos
+    setTimeout(() => {
+        if (url) URL.revokeObjectURL(url);
+    }, 600000);
+}
+
+// Método para desktop/fallback (mantenido para compatibilidad)
 function descargarYAbrirWhatsApp(blob, nombre, mensaje, telefono) {
     console.log('� Preparando WhatsApp sin descarga automática...');
     
@@ -555,21 +820,22 @@ function abrirWhatsAppTradicional(numeroLimpio, mensaje, linkDescarga) {
         
         // Limpiar después de 30 segundos
         setTimeout(() => {
-            limpiarImagenTemporal();
+            limpiarPDFTemporal();
         }, 30000);
     }, 1000);
 }
 
-function limpiarImagenTemporal() {
-    if (imagenCapturadaBlob) {
-        // Limpiar blob de memoria
-        imagenCapturadaBlob = null;
+function limpiarPDFTemporal() {
+    if (window.pdfGenerado) {
+        // Limpiar PDF de memoria
+        window.pdfGenerado = null;
+        window.nombreArchivoPDF = null;
         
         // Ocultar preview
-        document.getElementById('imagenCapturada').style.display = 'none';
+        document.getElementById('pdfGenerado').style.display = 'none';
         document.getElementById('btnWhatsApp').style.display = 'none';
         
-        mostrarNotificacion('🗑️ Imagen temporal eliminada de memoria', 'info');
+        mostrarNotificacion('🗑️ PDF temporal eliminado de memoria', 'info');
     }
 }
 
