@@ -410,7 +410,7 @@ body {
 }
 
 .document-sheet {
-  background: white;
+  background: #f8f9fa;
   padding: 40px;
   min-height: 600px;
   position: relative;
@@ -1132,8 +1132,6 @@ body {
   width: 280px;
   height: 180px;
   object-fit: contain;
-  background: white;
-  padding: 5px;
 }
 
 .right-section {
@@ -1149,8 +1147,6 @@ body {
   width: 360px;
   height: 180px;
   object-fit: contain;
-  background: white;
-  padding: 5px;
 }
 
 .logo-box {

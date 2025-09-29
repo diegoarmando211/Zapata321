@@ -254,9 +254,9 @@ async function generarPDF() {
         const { jsPDF } = window.jsPDF;
         const doc = new jsPDF('p', 'mm', 'a4');
         
-        // Fondo blanco completo para todo el PDF
-        doc.setFillColor(255, 255, 255);
-        doc.rect(0, 0, 210, 297, 'F'); // A4 completo en blanco
+        // Fondo gris claro para todo el PDF (igual que las imágenes)
+        doc.setFillColor(248, 249, 250);
+        doc.rect(0, 0, 210, 297, 'F'); // A4 completo en gris claro
         
         // Obtener datos del formulario
         const nombre = document.getElementById('nombreInput').value || 'Sin especificar';
@@ -273,19 +273,15 @@ async function generarPDF() {
         
         // Encabezado con dos imágenes separadas exactamente como en el certificado
         if (logoLeftUrl) {
-            // Fondo blanco para imagen izquierda
-            doc.setFillColor(255, 255, 255);
-            doc.rect(15, 15, 85, 45, 'F');
+            // Sin fondo extra - que las imágenes se muestren con su fondo natural
             // Imagen izquierda (servicios y teléfonos) - posición corregida
-            doc.addImage(logoRightUrl, 'PNG', 15, 15, 85, 45);
+            doc.addImage(logoRightUrl, 'JPEG', 15, 15, 85, 45);
         }
         
         if (logoRightUrl) {
-            // Fondo blanco para imagen derecha
-            doc.setFillColor(255, 255, 255);
-            doc.rect(115, 15, 75, 45, 'F');
+            // Sin fondo extra - que las imágenes se muestren con su fondo natural
             // Imagen derecha (logo LabMetal SAC) - posición corregida
-            doc.addImage(logoLeftUrl, 'PNG', 115, 15, 75, 45);
+            doc.addImage(logoLeftUrl, 'JPEG', 115, 15, 75, 45);
         }
         
         // Fallback si no se pueden cargar las imágenes
