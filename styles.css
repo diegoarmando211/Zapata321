@@ -1116,30 +1116,36 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  width: 100%;
   margin-bottom: 20px;
-  padding-bottom: 15px;
+  padding: 15px 0;
   position: relative;
 }
 
-.logo-section {
+.left-section {
+  flex: 0 0 300px;
   display: flex;
-  flex-direction: column;
   align-items: flex-start;
-  width: 100%;
-  max-width: 400px;
 }
 
-.logo-container {
+.logo-left {
+  width: 280px;
+  height: 180px;
+  object-fit: contain;
+}
+
+.right-section {
+  flex: 1;
+  text-align: right;
+  padding-left: 20px;
   display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-  width: 100%;
+  justify-content: flex-end;
+  align-items: flex-start;
 }
 
-.logo-image {
-  width: 100%;
-  max-width: 350px;
-  height: auto;
+.logo-right {
+  width: 360px;
+  height: 180px;
   object-fit: contain;
 }
 
@@ -1171,42 +1177,34 @@ body {
   margin-bottom: 5px;
 }
 
-.services-section {
-  flex: 1;
-  text-align: right;
-  padding-left: 20px;
-  position: relative;
+.services-text {
+  font-size: 12px;
+  color: #2563eb;
+  margin-bottom: 3px;
+  font-weight: 500;
+  line-height: 1.2;
 }
 
-.header-decoration {
-  position: absolute;
-  right: 0;
-  top: -10px;
-  width: 200px;
-  height: 40px;
+.decorative-wave {
+  width: 150px;
+  height: 20px;
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #92400e 100%);
   border-radius: 20px;
-  opacity: 0.3;
-}
-
-.services-text {
-  font-size: 11px;
-  color: #1e40af;
-  margin-bottom: 2px;
-  font-weight: 500;
-  font-family: Arial, sans-serif;
+  margin: 8px 0;
+  margin-left: auto;
+  opacity: 0.8;
 }
 
 .phone-numbers {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: bold;
-  color: #1e40af;
-  margin-top: 8px;
+  color: #2563eb;
   background: white;
-  border: 1px solid #1e40af;
+  border: 2px solid #2563eb;
   border-radius: 15px;
-  padding: 3px 8px;
+  padding: 5px 12px;
   display: inline-block;
+  margin-top: 5px;
 }
 
 .certificate-title {

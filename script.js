@@ -246,8 +246,9 @@ async function generarPDF() {
     }
     
     try {
-        // Cargar logo como base64
-        const logoDataUrl = await cargarImagenComoBase64('img/LOGOLABMETAL.png');
+        // Cargar ambas imágenes como base64
+        const logoLeftUrl = await cargarImagenComoBase64('img/Imagen de WhatsApp 2025-09-28 a las 20.49.20_7ddfaf59.jpg');
+        const logoRightUrl = await cargarImagenComoBase64('img/Imagen de WhatsApp 2025-09-28 a las 20.49.59_8d92c335.jpg');
         
         // Crear nuevo documento PDF
         const { jsPDF } = window.jsPDF;
@@ -266,11 +267,19 @@ async function generarPDF() {
         // Configurar fuente
         doc.setFont('helvetica');
         
-        // Encabezado con logo real (más grande)
-        if (logoDataUrl) {
-            doc.addImage(logoDataUrl, 'PNG', 15, 15, 80, 25);
-        } else {
-            // Fallback al logo texto si no se puede cargar la imagen
+        // Encabezado con dos imágenes separadas exactamente como en el certificado
+        if (logoLeftUrl) {
+            // Imagen izquierda (servicios y teléfonos) - posición corregida
+            doc.addImage(logoRightUrl, 'JPEG', 15, 15, 85, 45);
+        }
+        
+        if (logoRightUrl) {
+            // Imagen derecha (logo LabMetal SAC) - posición corregida
+            doc.addImage(logoLeftUrl, 'JPEG', 115, 15, 75, 45);
+        }
+        
+        // Fallback si no se pueden cargar las imágenes
+        if (!logoLeftUrl && !logoRightUrl) {
             doc.setFillColor(30, 64, 175);
             doc.rect(15, 15, 25, 18, 'F');
             doc.setTextColor(255, 255, 255);
@@ -278,51 +287,30 @@ async function generarPDF() {
             doc.setFont('helvetica', 'bold');
             doc.text('LM', 27.5, 26.5, { align: 'center' });
             
-            // Nombre de la empresa con línea inferior (solo si no hay logo)
-            doc.setTextColor(0, 0, 0);
-            doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
-            doc.text('LABMETAL SAC', 45, 25);
-            doc.setLineWidth(1);
-            doc.line(45, 27, 95, 27);
-        }
-        
-        // Solo los servicios si el logo no los incluye ya
-        if (!logoDataUrl) {
-            // Decoración dorada (simulada con color amarillo)
-            doc.setFillColor(245, 158, 11);
-            doc.ellipse(170, 20, 15, 5, 'F');
-            
-            // Servicios y teléfonos (lado derecho)
-            doc.setTextColor(30, 64, 175);
+            // Servicios de fallback
+            doc.setTextColor(37, 99, 235);
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.text('Análisis de Minerales: Oro - Plata - Cobre - Precipitados', 190, 18, { align: 'right' });
-            doc.text('Concentrados - Carbón Activado - Soluciones Cianuradas', 190, 22, { align: 'right' });
-            
-            // Teléfonos con marco
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(8);
-            doc.rect(150, 25, 40, 6);
-            doc.text('☎ 962 815 323 - 944 115 680', 170, 28.5, { align: 'center' });
+            doc.text('Análisis de Minerales: Oro - Plata - Cobre - Precipitados', 190, 20, { align: 'right' });
+            doc.text('Concentrados - Carbón Activado - Soluciones Cianuradas', 190, 25, { align: 'right' });
         }
         
-        // Línea separadora
+        // Línea separadora (mantener posición original)
         doc.setLineWidth(0.5);
-        doc.line(15, 40, 195, 40);
+        doc.line(15, 55, 195, 55);
         
         // Título del certificado
         doc.setFillColor(243, 244, 246);
-        doc.rect(15, 45, 180, 10, 'F');
+        doc.rect(15, 60, 180, 10, 'F');
         doc.setLineWidth(0.3);
-        doc.rect(15, 45, 180, 10);
+        doc.rect(15, 60, 180, 10);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
-        doc.text('CERTIFICADO DE ANALISIS', 105, 51.5, { align: 'center' });
+        doc.text('CERTIFICADO DE ANALISIS', 105, 66.5, { align: 'center' });
         
-        // Información del cliente
-        let yPos = 65;
+        // Información del cliente (mantener posición original)
+        let yPos = 75;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         
