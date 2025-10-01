@@ -249,7 +249,23 @@
   </div>
 
   <!-- Librería para generar PDFs -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script>
+    // Verificación adicional de jsPDF
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        if (typeof window.jsPDF === 'undefined') {
+          console.error('❌ jsPDF no se cargó, intentando cargar de nuevo...');
+          const script = document.createElement('script');
+          script.src = 'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js';
+          script.onload = () => console.log('✅ jsPDF cargado desde unpkg');
+          document.head.appendChild(script);
+        } else {
+          console.log('✅ jsPDF disponible:', typeof window.jsPDF);
+        }
+      }, 1000);
+    });
+  </script>
   <script src="./script.js?v=20250930"></script>
   <!-- VERSIÓN ACTUALIZADA: 30 SEP 2025 - v2.1 -->
 </body>

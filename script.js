@@ -11,6 +11,33 @@ let clientes = [];
 let pdfGeneradoBlob = null;
 let clienteSeleccionado = null;
 
+// Función para esperar a que jsPDF se cargue
+function esperarJsPDF() {
+    return new Promise((resolve) => {
+        if (typeof window.jsPDF !== 'undefined') {
+            console.log('✅ jsPDF ya está disponible');
+            resolve();
+            return;
+        }
+        
+        console.log('⏳ Esperando a que se cargue jsPDF...');
+        const checkInterval = setInterval(() => {
+            if (typeof window.jsPDF !== 'undefined') {
+                console.log('✅ jsPDF se cargó correctamente');
+                clearInterval(checkInterval);
+                resolve();
+            }
+        }, 100);
+        
+        // Timeout después de 10 segundos
+        setTimeout(() => {
+            console.error('❌ Timeout esperando jsPDF');
+            clearInterval(checkInterval);
+            resolve();
+        }, 10000);
+    });
+}
+
 // ===================================
 // INICIALIZACIÓN
 // ===================================
@@ -20,12 +47,23 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function inicializarApp() {
+    console.log('🚀 Iniciando aplicación...');
+    
     // Establecer fecha actual
     const hoy = new Date().toISOString().split('T')[0];
     document.getElementById('fechaInput').value = hoy;
     
     // Mostrar hora de generación
     mostrarHoraGeneracion();
+    
+    // Verificar jsPDF en el background
+    setTimeout(() => {
+        if (typeof window.jsPDF !== 'undefined') {
+            console.log('✅ jsPDF detectado correctamente');
+        } else {
+            console.warn('⚠️ jsPDF no detectado aún');
+        }
+    }, 2000);
     
     // Cargar clientes
     await cargarClientes();
@@ -236,9 +274,12 @@ function limpiarFormulario() {
 async function generarPDF() {
     console.log('=== INICIANDO GENERACIÓN DE PDF ===');
     
+    // Esperar a que jsPDF se cargue completamente
+    await esperarJsPDF();
+    
     // Validar que jsPDF esté disponible
     if (typeof window.jsPDF === 'undefined') {
-        console.error('❌ jsPDF no está disponible');
+        console.error('❌ jsPDF no está disponible después de esperar');
         mostrarNotificacion('❌ Error: Librería PDF no disponible', 'error');
         return;
     }
