@@ -132,8 +132,7 @@ function filtrarNombres() {
             const item = document.createElement('div');
             item.className = 'filter-item';
             item.innerHTML = `
-                <strong>${cliente.NombreCliente || 'Sin nombre'}</strong><br>
-                <small>📞 ${cliente.Telefono || 'Sin teléfono'}</small>
+                <strong>${cliente.NombreCliente || 'Sin nombre'}</strong>
             `;
             item.onclick = () => seleccionarCliente(cliente);
             contenedorFiltros.appendChild(item);
@@ -153,8 +152,7 @@ function seleccionarCliente(cliente) {
     clienteSeleccionado = cliente;
     actualizarHoja();
     
-    const telefono = cliente.Telefono || 'Sin teléfono';
-    mostrarNotificacion(`✅ Cliente seleccionado: ${cliente.NombreCliente} (${telefono})`, 'success');
+    mostrarNotificacion(`✅ Cliente seleccionado: ${cliente.NombreCliente}`, 'success');
 }
 
 // ===================================
@@ -636,8 +634,8 @@ function previsualizarPDF() {
 function compartirWhatsApp() {
     console.log('🚀 INICIANDO ENVÍO POR WHATSAPP');
     
-    if (!clienteSeleccionado || !clienteSeleccionado.Telefono) {
-        mostrarNotificacion('⚠️ Selecciona un cliente con teléfono válido', 'warning');
+    if (!clienteSeleccionado) {
+        mostrarNotificacion('⚠️ Selecciona un cliente primero', 'warning');
         return;
     }
     
@@ -646,9 +644,16 @@ function compartirWhatsApp() {
         return;
     }
     
+    // Solicitar número de teléfono manualmente
+    const telefono = prompt('📱 Ingresa el número de WhatsApp (sin espacios ni símbolos):', '983832001');
+    
+    if (!telefono) {
+        mostrarNotificacion('⚠️ Número de teléfono requerido para envío', 'warning');
+        return;
+    }
+    
     try {
         const nombre = document.getElementById('nombreInput').value || 'cliente';
-        const telefono = clienteSeleccionado.Telefono.toString();
         const numeroLimpio = telefono.replace(/\D/g, '');
         
         // Crear mensaje simple
