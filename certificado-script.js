@@ -78,6 +78,29 @@ function verificarJsPDF() {
     return true;
 }
 
+/**
+ * Función para forzar recarga de jsPDF (llamada desde HTML)
+ */
+window.forzarRecargaJsPDF = function() {
+    mostrarNotificacion('🔄 Forzando recarga de jsPDF...', 'info');
+    
+    // Eliminar scripts existentes
+    const scriptsExistentes = document.querySelectorAll('script[src*="jspdf"]');
+    scriptsExistentes.forEach(script => script.remove());
+    
+    // Limpiar variable global
+    if (window.jsPDF) {
+        delete window.jsPDF;
+    }
+    
+    // Usar la función del HTML para recargar
+    if (typeof window.verificarJsPDF === 'function') {
+        window.verificarJsPDF();
+    } else {
+        mostrarNotificacion('❌ No se pudo acceder a la función de recarga', 'error');
+    }
+};
+
 // ===================================
 // FUNCIONES PRINCIPALES
 // ===================================
@@ -89,8 +112,33 @@ async function generarCertificadoPDF() {
     try {
         mostrarNotificacion('🔄 Generando certificado PDF...', 'info');
         
-        // 1. Verificar jsPDF
-        verificarJsPDF();
+        // 1. Verificar jsPDF con reintentos
+        let jsPDFDisponible = false;
+        let intentos = 0;
+        const maxIntentos = 3;
+        
+        while (!jsPDFDisponible && intentos < maxIntentos) {
+            try {
+                verificarJsPDF();
+                jsPDFDisponible = true;
+            } catch (error) {
+                intentos++;
+                console.warn(`⚠️ Intento ${intentos} de verificar jsPDF falló:`, error.message);
+                
+                if (intentos < maxIntentos) {
+                    mostrarNotificacion(`🔄 Reintentando cargar jsPDF (${intentos}/${maxIntentos})...`, 'info');
+                    
+                    // Intentar recargar jsPDF
+                    if (typeof window.verificarJsPDF === 'function') {
+                        window.verificarJsPDF();
+                        // Esperar un poco antes del siguiente intento
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
+                } else {
+                    throw new Error('jsPDF no está disponible después de múltiples intentos');
+                }
+            }
+        }
         
         // 2. Obtener datos del formulario
         const datos = obtenerDatosFormulario();
@@ -130,16 +178,43 @@ async function generarCertificadoPDF() {
         
     } catch (error) {
         console.error('❌ Error generando certificado:', error);
-        mostrarNotificacion(`❌ Error: ${error.message}`, 'error');
         
-        // Ofrecer alternativa si falla
-        const usarAlternativa = confirm(
-            '¿Deseas generar un archivo de texto con los datos del certificado?\n' +
-            'Podrás convertirlo a PDF manualmente después.'
+        // Mensaje de error más específico
+        let mensajeError = error.message;
+        if (error.message.includes('jsPDF')) {
+            mensajeError = 'No se pudo cargar la librería jsPDF. Verifica tu conexión a internet.';
+        } else if (error.message.includes('plantilla')) {
+            mensajeError = 'No se pudo cargar la plantilla del certificado.';
+        }
+        
+        mostrarNotificacion(`❌ Error: ${mensajeError}`, 'error');
+        
+        // Ofrecer alternativas
+        const opciones = [
+            '1. Verificar jsPDF y reintentar',
+            '2. Generar archivo de texto',
+            '3. Cancelar'
+        ].join('\n');
+        
+        const respuesta = prompt(
+            `Error generando PDF:\n${mensajeError}\n\n${opciones}\n\nElige una opción (1, 2 o 3):`
         );
         
-        if (usarAlternativa) {
-            generarCertificadoTexto();
+        switch (respuesta) {
+            case '1':
+                if (typeof window.verificarJsPDF === 'function') {
+                    window.verificarJsPDF();
+                    setTimeout(() => {
+                        mostrarNotificacion('🔄 Intenta generar el PDF nuevamente', 'info');
+                    }, 2000);
+                }
+                break;
+            case '2':
+                generarCertificadoTexto();
+                break;
+            default:
+                mostrarNotificacion('ℹ️ Operación cancelada', 'info');
+                break;
         }
     }
 }

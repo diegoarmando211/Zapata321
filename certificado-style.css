@@ -310,6 +310,17 @@ body {
     background: #2980b9;
 }
 
+.btn-outline {
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-outline:hover {
+    background: var(--primary-color);
+    color: var(--white);
+}
+
 /* ===================================
    VISTA PREVIA
    =================================== */

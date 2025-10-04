@@ -200,6 +200,16 @@
                             <i class="fas fa-magic"></i> Cargar Ejemplo
                         </button>
                     </div>
+                    
+                    <!-- Botones de Diagnóstico -->
+                    <div class="form-actions" style="border-top: 1px solid #e9ecef; margin-top: 0; padding-top: 1rem;">
+                        <button type="button" onclick="verificarJsPDF()" class="btn btn-outline" style="flex: 1;">
+                            <i class="fas fa-stethoscope"></i> Verificar jsPDF
+                        </button>
+                        <button type="button" onclick="forzarRecargaJsPDF()" class="btn btn-outline" style="flex: 1;">
+                            <i class="fas fa-sync-alt"></i> Recargar jsPDF
+                        </button>
+                    </div>
                 </form>
             </div>
 
@@ -218,8 +228,89 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
+        // Sistema robusto de carga de jsPDF con múltiples CDNs
+        let jsPDFLoaded = false;
+        let loadAttempts = 0;
+        const maxAttempts = 3;
+        
+        // CDNs de respaldo en orden de prioridad
+        const jsPDFSources = [
+            'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+            'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js',
+            'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'
+        ];
+        
+        function cargarJsPDF(sourceIndex = 0) {
+            if (sourceIndex >= jsPDFSources.length) {
+                console.error('❌ No se pudo cargar jsPDF desde ninguna fuente');
+                actualizarEstadoSistema('error', 'Error: No se pudo cargar jsPDF');
+                return;
+            }
+            
+            loadAttempts++;
+            console.log(`🔄 Intento ${loadAttempts}: Cargando jsPDF desde ${jsPDFSources[sourceIndex]}`);
+            
+            const script = document.createElement('script');
+            script.src = jsPDFSources[sourceIndex];
+            
+            script.onload = () => {
+                if (typeof window.jsPDF !== 'undefined') {
+                    jsPDFLoaded = true;
+                    console.log(`✅ jsPDF cargado exitosamente desde: ${jsPDFSources[sourceIndex]}`);
+                    actualizarEstadoSistema('success', 'Sistema listo - jsPDF cargado');
+                } else {
+                    console.warn(`⚠️ Script cargado pero jsPDF no disponible desde: ${jsPDFSources[sourceIndex]}`);
+                    cargarJsPDF(sourceIndex + 1);
+                }
+            };
+            
+            script.onerror = () => {
+                console.warn(`❌ Error cargando desde: ${jsPDFSources[sourceIndex]}`);
+                cargarJsPDF(sourceIndex + 1);
+            };
+            
+            // Timeout de 10 segundos por intento
+            setTimeout(() => {
+                if (!jsPDFLoaded && script.parentNode) {
+                    console.warn(`⏱️ Timeout cargando desde: ${jsPDFSources[sourceIndex]}`);
+                    script.remove();
+                    cargarJsPDF(sourceIndex + 1);
+                }
+            }, 10000);
+            
+            document.head.appendChild(script);
+        }
+        
+        function actualizarEstadoSistema(tipo, mensaje) {
+            const status = document.getElementById('system-status');
+            if (!status) return;
+            
+            const iconos = {
+                success: 'fas fa-check-circle',
+                warning: 'fas fa-exclamation-triangle',
+                error: 'fas fa-times-circle',
+                loading: 'fas fa-spinner fa-spin'
+            };
+            
+            status.innerHTML = `<i class="${iconos[tipo] || iconos.loading}"></i> ${mensaje}`;
+            status.className = `status-info ${tipo}`;
+        }
+        
+        // Función para verificar y recargar jsPDF si es necesario
+        window.verificarJsPDF = function() {
+            if (typeof window.jsPDF !== 'undefined') {
+                actualizarEstadoSistema('success', 'jsPDF está disponible y funcionando');
+                return true;
+            } else {
+                actualizarEstadoSistema('warning', 'Reintentando cargar jsPDF...');
+                jsPDFLoaded = false;
+                loadAttempts = 0;
+                cargarJsPDF(0);
+                return false;
+            }
+        };
+        
         // Configuración inicial
         window.addEventListener('load', function() {
             // Establecer fechas por defecto
@@ -233,17 +324,18 @@
             const año = hoy.getFullYear();
             document.getElementById('referencia').value = `A - ${dia}-${mes}-${año}`;
             
-            // Verificar jsPDF
+            // Inicializar estado
+            actualizarEstadoSistema('loading', 'Cargando jsPDF...');
+            
+            // Iniciar carga de jsPDF
+            cargarJsPDF(0);
+            
+            // Verificación adicional después de 3 segundos
             setTimeout(() => {
-                const status = document.getElementById('system-status');
-                if (typeof window.jsPDF !== 'undefined') {
-                    status.innerHTML = '<i class="fas fa-check-circle"></i> Sistema listo - jsPDF cargado';
-                    status.className = 'status-info success';
-                } else {
-                    status.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Advertencia: jsPDF no cargado';
-                    status.className = 'status-info warning';
+                if (!jsPDFLoaded) {
+                    verificarJsPDF();
                 }
-            }, 1000);
+            }, 3000);
         });
     </script>
     <script src="./certificado-script.js"></script>
