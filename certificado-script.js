@@ -7,31 +7,37 @@
 // CONFIGURACIÓN Y VARIABLES GLOBALES
 // ===================================
 
-// Configuración de coordenadas para posicionar texto sobre la plantilla
+// Configuración de coordenadas basadas en el certificado real de LABMETAL SAC
 const COORDENADAS_CERTIFICADO = {
-    // Información del cliente (ajustar según tu plantilla)
-    cliente: { x: 50, y: 80 },
-    referencia: { x: 150, y: 90 },
-    solicitudAnalisis: { x: 50, y: 100 },
+    // Información del cliente - parte superior
+    cliente: { x: 330, y: 77 },              // FERNANDO LOYOLA
+    referencia: { x: 330, y: 93 },           // A - 20-09-2025  
+    solicitudAnalisis: { x: 330, y: 109 },   // Newmont - Au
     
-    // Información de la muestra
-    material: { x: 50, y: 120 },
-    codigo: { x: 150, y: 120 },
-    condiciones: { x: 50, y: 140 },
-    fechaRecepcion: { x: 50, y: 160 },
-    humedad: { x: 150, y: 160 },
+    // Sección RECEPCION DE MUESTRA
+    material: { x: 330, y: 138 },            // Polveado Óxido
+    codigo: { x: 330, y: 154 },              // PO
+    condiciones: { x: 330, y: 170 },         // Muestra en Bolsa Cerrada
+    fechaRecepcion: { x: 330, y: 186 },      // sábado, 20 de Septiembre de 2025
+    humedad: { x: 350, y: 202 },             // % H₂O (vacío o valor)
     
-    // Datos del laboratorio
-    numeroLab: { x: 50, y: 180 },
-    descripcion: { x: 150, y: 180 },
+    // Tabla de resultados - Código y Descripción
+    codigoTabla: { x: 147, y: 233 },         // PO (en la tabla)
+    descripcionTabla: { x: 299, y: 233 },   // ELIO
     
-    // Resultados
-    resultadoGrTm: { x: 100, y: 200 },
-    resultadoOzTc: { x: 150, y: 200 },
+    // Resultados en la tabla principal
+    resultadoMalla150Mas: { x: 470, y: 233 }, // 2.011 (MALLA + 150 Au)
+    resultadoMalla150Menos: { x: 545, y: 233 }, // 8.324 (MALLA - 150 Au)
     
-    // Información final
-    fechaFinal: { x: 50, y: 240 },
-    observaciones: { x: 50, y: 260 }
+    // Resultados finales en la tabla pequeña
+    resultadoGrTm: { x: 470, y: 266 },       // 10.335 (Au Gr/Tm)
+    resultadoOzTc: { x: 545, y: 266 },       // 0.301 (Au Oz/Tc)
+    
+    // Fecha final del documento
+    fechaFinal: { x: 417, y: 293 },          // domingo, 21 de Septiembre de 2025
+    
+    // Observaciones (si las hay)
+    observaciones: { x: 50, y: 310 }         // Texto libre adicional
 };
 
 // Variables globales
@@ -234,6 +240,8 @@ function obtenerDatosFormulario() {
         humedad: document.getElementById('humedad').value.trim(),
         numeroLab: document.getElementById('numeroLab').value.trim(),
         descripcion: document.getElementById('descripcion').value.trim(),
+        resultadoMalla150Mas: document.getElementById('resultadoMalla150Mas').value.trim(),
+        resultadoMalla150Menos: document.getElementById('resultadoMalla150Menos').value.trim(),
         resultadoGrTm: document.getElementById('resultadoGrTm').value.trim(),
         resultadoOzTc: document.getElementById('resultadoOzTc').value.trim(),
         fechaFinal: document.getElementById('fechaFinal').value,
@@ -259,23 +267,18 @@ function validarDatos(datos) {
 }
 
 /**
- * Agregar todos los textos sobre la plantilla
- * IMPORTANTE: Ajusta las coordenadas según tu plantilla específica
+ * Agregar todos los textos sobre la plantilla de LABMETAL SAC
+ * Coordenadas ajustadas basadas en el certificado real
  */
 function agregarTextosCertificado(doc, datos) {
-    // Configurar fuente
+    // Configurar fuente base - Arial o Helvetica, tamaño 9
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setTextColor(0, 0, 0); // Negro
     
-    // INSTRUCCIONES PARA AJUSTAR COORDENADAS:
-    // - x: posición horizontal (0 = izquierda, 210 = derecha para A4)
-    // - y: posición vertical (0 = arriba, 297 = abajo para A4)
-    // - Puedes cambiar estos valores según donde necesites el texto en tu plantilla
-    
-    // Información del cliente
+    // === INFORMACIÓN DEL CLIENTE ===
     if (datos.cliente) {
-        doc.text(datos.cliente, COORDENADAS_CERTIFICADO.cliente.x, COORDENADAS_CERTIFICADO.cliente.y);
+        doc.text(datos.cliente.toUpperCase(), COORDENADAS_CERTIFICADO.cliente.x, COORDENADAS_CERTIFICADO.cliente.y);
     }
     
     if (datos.referencia) {
@@ -286,19 +289,17 @@ function agregarTextosCertificado(doc, datos) {
         doc.text(datos.solicitud, COORDENADAS_CERTIFICADO.solicitudAnalisis.x, COORDENADAS_CERTIFICADO.solicitudAnalisis.y);
     }
     
-    // Información de la muestra
+    // === RECEPCIÓN DE MUESTRA ===
     if (datos.material) {
         doc.text(datos.material, COORDENADAS_CERTIFICADO.material.x, COORDENADAS_CERTIFICADO.material.y);
     }
     
     if (datos.codigo) {
-        doc.text(datos.codigo, COORDENADAS_CERTIFICADO.codigo.x, COORDENADAS_CERTIFICADO.codigo.y);
+        doc.text(datos.codigo.toUpperCase(), COORDENADAS_CERTIFICADO.codigo.x, COORDENADAS_CERTIFICADO.codigo.y);
     }
     
     if (datos.condiciones) {
-        // Para textos largos, usar splitTextToSize para que se ajusten
-        const condicionesTexto = doc.splitTextToSize(datos.condiciones, 100);
-        doc.text(condicionesTexto, COORDENADAS_CERTIFICADO.condiciones.x, COORDENADAS_CERTIFICADO.condiciones.y);
+        doc.text(datos.condiciones, COORDENADAS_CERTIFICADO.condiciones.x, COORDENADAS_CERTIFICADO.condiciones.y);
     }
     
     if (datos.fechaRecepcion) {
@@ -306,40 +307,56 @@ function agregarTextosCertificado(doc, datos) {
         doc.text(fechaFormateada, COORDENADAS_CERTIFICADO.fechaRecepcion.x, COORDENADAS_CERTIFICADO.fechaRecepcion.y);
     }
     
-    if (datos.humedad) {
+    if (datos.humedad && datos.humedad !== '—') {
         doc.text(datos.humedad, COORDENADAS_CERTIFICADO.humedad.x, COORDENADAS_CERTIFICADO.humedad.y);
     }
     
-    // Datos del laboratorio
-    if (datos.numeroLab) {
-        doc.text(datos.numeroLab, COORDENADAS_CERTIFICADO.numeroLab.x, COORDENADAS_CERTIFICADO.numeroLab.y);
+    // === TABLA DE RESULTADOS ===
+    // Código en la tabla (generalmente igual al código de arriba)
+    if (datos.codigo) {
+        doc.text(datos.codigo.toUpperCase(), COORDENADAS_CERTIFICADO.codigoTabla.x, COORDENADAS_CERTIFICADO.codigoTabla.y);
     }
     
+    // Descripción en la tabla
     if (datos.descripcion) {
-        doc.text(datos.descripcion, COORDENADAS_CERTIFICADO.descripcion.x, COORDENADAS_CERTIFICADO.descripcion.y);
+        doc.text(datos.descripcion.toUpperCase(), COORDENADAS_CERTIFICADO.descripcionTabla.x, COORDENADAS_CERTIFICADO.descripcionTabla.y);
     }
     
-    // Resultados (en negrita)
+    // Resultados de mallas (si están disponibles)
+    if (datos.resultadoMalla150Mas) {
+        doc.text(datos.resultadoMalla150Mas, COORDENADAS_CERTIFICADO.resultadoMalla150Mas.x, COORDENADAS_CERTIFICADO.resultadoMalla150Mas.y);
+    }
+    
+    if (datos.resultadoMalla150Menos) {
+        doc.text(datos.resultadoMalla150Menos, COORDENADAS_CERTIFICADO.resultadoMalla150Menos.x, COORDENADAS_CERTIFICADO.resultadoMalla150Menos.y);
+    }
+    
+    // === RESULTADOS FINALES ===
+    // Configurar fuente en negrita para resultados finales
     doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    
     if (datos.resultadoGrTm) {
-        doc.text(datos.resultadoGrTm + ' Gr/Tm', COORDENADAS_CERTIFICADO.resultadoGrTm.x, COORDENADAS_CERTIFICADO.resultadoGrTm.y);
+        doc.text(datos.resultadoGrTm, COORDENADAS_CERTIFICADO.resultadoGrTm.x, COORDENADAS_CERTIFICADO.resultadoGrTm.y);
     }
     
     if (datos.resultadoOzTc) {
-        doc.text(datos.resultadoOzTc + ' Oz/Tc', COORDENADAS_CERTIFICADO.resultadoOzTc.x, COORDENADAS_CERTIFICADO.resultadoOzTc.y);
+        doc.text(datos.resultadoOzTc, COORDENADAS_CERTIFICADO.resultadoOzTc.x, COORDENADAS_CERTIFICADO.resultadoOzTc.y);
     }
     
     // Volver a fuente normal
     doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
     
-    // Fecha final
+    // === FECHA FINAL ===
     if (datos.fechaFinal) {
         const fechaFormateada = formatearFecha(datos.fechaFinal);
         doc.text(fechaFormateada, COORDENADAS_CERTIFICADO.fechaFinal.x, COORDENADAS_CERTIFICADO.fechaFinal.y);
     }
     
-    // Observaciones
-    if (datos.observaciones) {
+    // === OBSERVACIONES ADICIONALES ===
+    if (datos.observaciones && datos.observaciones.trim() !== '') {
+        doc.setFontSize(8);
         const observacionesTexto = doc.splitTextToSize(datos.observaciones, 150);
         doc.text(observacionesTexto, COORDENADAS_CERTIFICADO.observaciones.x, COORDENADAS_CERTIFICADO.observaciones.y);
     }
@@ -462,23 +479,25 @@ function limpiarFormulario() {
 }
 
 /**
- * Cargar datos de ejemplo para pruebas
+ * Cargar datos de ejemplo basados en el certificado real
  */
 function cargarDatosEjemplo() {
-    document.getElementById('cliente').value = 'JESÚS OTINIANO';
-    document.getElementById('referencia').value = 'A - 03-10-2025';
-    document.getElementById('solicitud').value = 'Duplicado - Au';
-    document.getElementById('material').value = 'Mineral Óxido';
-    document.getElementById('codigo').value = 'MO';
-    document.getElementById('condiciones').value = 'Muestra en bolsa con precinto';
-    document.getElementById('humedad').value = '—';
-    document.getElementById('numeroLab').value = 'MO';
-    document.getElementById('descripcion').value = 'RULY';
-    document.getElementById('resultadoGrTm').value = '3.800';
-    document.getElementById('resultadoOzTc').value = '0.111';
-    document.getElementById('observaciones').value = 'Muestra procesada según protocolo estándar del laboratorio.';
+    document.getElementById('cliente').value = 'FERNANDO LOYOLA';
+    document.getElementById('referencia').value = 'A - 20-09-2025';
+    document.getElementById('solicitud').value = 'Newmont - Au';
+    document.getElementById('material').value = 'Polveado Óxido';
+    document.getElementById('codigo').value = 'PO';
+    document.getElementById('condiciones').value = 'Muestra en Bolsa Cerrada';
+    document.getElementById('humedad').value = '';
+    document.getElementById('numeroLab').value = 'PO';
+    document.getElementById('descripcion').value = 'ELIO';
+    document.getElementById('resultadoMalla150Mas').value = '2.011';
+    document.getElementById('resultadoMalla150Menos').value = '8.324';
+    document.getElementById('resultadoGrTm').value = '10.335';
+    document.getElementById('resultadoOzTc').value = '0.301';
+    document.getElementById('observaciones').value = '';
     
-    mostrarNotificacion('✅ Datos de ejemplo cargados', 'success');
+    mostrarNotificacion('✅ Datos de ejemplo cargados (FERNANDO LOYOLA)', 'success');
 }
 
 /**

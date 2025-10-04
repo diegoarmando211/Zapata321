@@ -148,7 +148,18 @@
                             </div>
                             <div class="form-group">
                                 <label for="descripcion">Descripción:</label>
-                                <input type="text" id="descripcion" name="descripcion" placeholder="Ej: RULY">
+                                <input type="text" id="descripcion" name="descripcion" placeholder="Ej: ELIO">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="resultadoMalla150Mas">MALLA + 150 Au (Gr/Tm):</label>
+                                <input type="number" id="resultadoMalla150Mas" name="resultadoMalla150Mas" step="0.001" placeholder="Ej: 2.011">
+                            </div>
+                            <div class="form-group">
+                                <label for="resultadoMalla150Menos">MALLA - 150 Au (Gr/Tm):</label>
+                                <input type="number" id="resultadoMalla150Menos" name="resultadoMalla150Menos" step="0.001" placeholder="Ej: 8.324">
                             </div>
                         </div>
                     </div>
@@ -209,6 +220,9 @@
                         <button type="button" onclick="forzarRecargaJsPDF()" class="btn btn-outline" style="flex: 1;">
                             <i class="fas fa-sync-alt"></i> Recargar jsPDF
                         </button>
+                        <button type="button" onclick="usarAlternativaPDF()" class="btn btn-outline" style="flex: 1;">
+                            <i class="fas fa-file-alt"></i> Generar TXT
+                        </button>
                     </div>
                 </form>
             </div>
@@ -228,23 +242,25 @@
     </div>
 
     <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-        // Sistema robusto de carga de jsPDF con múltiples CDNs
+        // Sistema simple y efectivo de carga de jsPDF
         let jsPDFLoaded = false;
         let loadAttempts = 0;
-        const maxAttempts = 3;
+        const maxAttempts = 5;
         
-        // CDNs de respaldo en orden de prioridad
+        // CDNs de respaldo con diferentes versiones para mayor compatibilidad
         const jsPDFSources = [
+            'https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js',
+            'https://cdn.jsdelivr.net/npm/jspdf@latest/dist/jspdf.umd.min.js',
             'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-            'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js',
-            'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'
+            'https://unpkg.com/jspdf@2.4.0/dist/jspdf.umd.min.js'
         ];
         
         function cargarJsPDF(sourceIndex = 0) {
             if (sourceIndex >= jsPDFSources.length) {
                 console.error('❌ No se pudo cargar jsPDF desde ninguna fuente');
-                actualizarEstadoSistema('error', 'Error: No se pudo cargar jsPDF');
+                actualizarEstadoSistema('error', 'Error: jsPDF no disponible - Usar método de respaldo');
                 return;
             }
             
@@ -255,29 +271,37 @@
             script.src = jsPDFSources[sourceIndex];
             
             script.onload = () => {
-                if (typeof window.jsPDF !== 'undefined') {
-                    jsPDFLoaded = true;
-                    console.log(`✅ jsPDF cargado exitosamente desde: ${jsPDFSources[sourceIndex]}`);
-                    actualizarEstadoSistema('success', 'Sistema listo - jsPDF cargado');
-                } else {
-                    console.warn(`⚠️ Script cargado pero jsPDF no disponible desde: ${jsPDFSources[sourceIndex]}`);
-                    cargarJsPDF(sourceIndex + 1);
-                }
+                // Esperar un poco para que jsPDF se inicialice
+                setTimeout(() => {
+                    if (typeof window.jsPDF !== 'undefined' || typeof window.jspdf !== 'undefined') {
+                        // Normalizar la referencia global
+                        if (typeof window.jsPDF === 'undefined' && typeof window.jspdf !== 'undefined') {
+                            window.jsPDF = window.jspdf.jsPDF;
+                        }
+                        
+                        jsPDFLoaded = true;
+                        console.log(`✅ jsPDF cargado exitosamente desde: ${jsPDFSources[sourceIndex]}`);
+                        actualizarEstadoSistema('success', 'Sistema listo - jsPDF cargado');
+                    } else {
+                        console.warn(`⚠️ Script cargado pero jsPDF no disponible desde: ${jsPDFSources[sourceIndex]}`);
+                        setTimeout(() => cargarJsPDF(sourceIndex + 1), 500);
+                    }
+                }, 500);
             };
             
             script.onerror = () => {
                 console.warn(`❌ Error cargando desde: ${jsPDFSources[sourceIndex]}`);
-                cargarJsPDF(sourceIndex + 1);
+                setTimeout(() => cargarJsPDF(sourceIndex + 1), 500);
             };
             
-            // Timeout de 10 segundos por intento
+            // Timeout de 5 segundos por intento
             setTimeout(() => {
                 if (!jsPDFLoaded && script.parentNode) {
                     console.warn(`⏱️ Timeout cargando desde: ${jsPDFSources[sourceIndex]}`);
                     script.remove();
                     cargarJsPDF(sourceIndex + 1);
                 }
-            }, 10000);
+            }, 5000);
             
             document.head.appendChild(script);
         }
@@ -306,8 +330,25 @@
                 actualizarEstadoSistema('warning', 'Reintentando cargar jsPDF...');
                 jsPDFLoaded = false;
                 loadAttempts = 0;
+                
+                // Limpiar scripts existentes
+                const scriptsExistentes = document.querySelectorAll('script[src*="jspdf"]');
+                scriptsExistentes.forEach(script => script.remove());
+                
                 cargarJsPDF(0);
                 return false;
+            }
+        };
+        
+        // Función alternativa si jsPDF falla completamente
+        window.usarAlternativaPDF = function() {
+            actualizarEstadoSistema('warning', 'Usando método alternativo - Sin dependencias externas');
+            
+            // Llamar directamente al generador de texto
+            if (typeof window.generarCertificadoTexto === 'function') {
+                window.generarCertificadoTexto();
+            } else {
+                alert('Por favor, usa el botón "Generar PDF" e selecciona la opción de generar archivo de texto.');
             }
         };
         
