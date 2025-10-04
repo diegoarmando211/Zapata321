@@ -7,38 +7,38 @@
 // CONFIGURACIÓN Y VARIABLES GLOBALES
 // ===================================
 
-// Configuración de coordenadas basadas en el certificado real de LABMETAL SAC
-// Coordenadas ajustadas para formato A4 (210mm x 297mm)
+// Configuración de coordenadas exactas basadas en el certificado real de LABMETAL SAC
+// Coordenadas precisas para formato A4 (210mm x 297mm) - medidas exactas del certificado original
 const COORDENADAS_CERTIFICADO = {
-    // Información del cliente - parte superior
-    cliente: { x: 120, y: 60 },              // FERNANDO LOYOLA
-    referencia: { x: 120, y: 75 },           // A - 20-09-2025  
-    solicitudAnalisis: { x: 120, y: 90 },    // Newmont - Au
+    // Información del cliente - parte superior (después de los dos puntos)
+    cliente: { x: 95, y: 73 },               // FERNANDO LOYOLA (después de "CLIENTE :")
+    referencia: { x: 95, y: 87 },            // A - 20-09-2025 (después de "REFERENCIA :")
+    solicitudAnalisis: { x: 95, y: 101 },    // Newmont - Au (después de "SOLICITUD DE ANALISIS :")
     
-    // Sección RECEPCION DE MUESTRA
-    material: { x: 120, y: 120 },            // Polveado Óxido
-    codigo: { x: 120, y: 135 },              // PO
-    condiciones: { x: 120, y: 150 },         // Muestra en Bolsa Cerrada
-    fechaRecepcion: { x: 120, y: 165 },      // sábado, 20 de Septiembre de 2025
-    humedad: { x: 120, y: 180 },             // % H₂O (vacío o valor)
+    // Sección RECEPCION DE MUESTRA (después de los dos puntos)
+    material: { x: 95, y: 125 },             // Polveado Óxido (después de "MATERIAL :")
+    codigo: { x: 95, y: 139 },               // PO (después de "CODIGO :")
+    condiciones: { x: 95, y: 153 },          // Muestra en Bolsa Cerrada (después de "CONDICIONES Y CARACTERISTICAS :")
+    fechaRecepcion: { x: 95, y: 167 },       // sábado, 20 de Septiembre de 2025 (después de "FECHA DE RECEPCION :")
+    humedad: { x: 95, y: 181 },              // % H₂O (después de "% H₂O :")
     
-    // Tabla de resultados - Código y Descripción
-    codigoTabla: { x: 50, y: 210 },          // PO (en la tabla)
-    descripcionTabla: { x: 100, y: 210 },    // ELIO
+    // Tabla de resultados - Código y Descripción (centrados en las celdas)
+    codigoTabla: { x: 43, y: 201 },          // PO (centrado en primera columna)
+    descripcionTabla: { x: 85, y: 201 },     // ELIO (centrado en segunda columna)
     
-    // Resultados en la tabla principal
-    resultadoMalla150Mas: { x: 150, y: 210 }, // 2.011 (MALLA + 150 Au)
-    resultadoMalla150Menos: { x: 180, y: 210 }, // 8.324 (MALLA - 150 Au)
+    // Resultados en la tabla principal (centrados en las celdas de resultados)
+    resultadoMalla150Mas: { x: 133, y: 201 }, // 2.011 (MALLA + 150 Au Gr/Tm)
+    resultadoMalla150Menos: { x: 175, y: 201 }, // 8.324 (MALLA - 150 Au Gr/Tm)
     
-    // Resultados finales en la tabla pequeña
-    resultadoGrTm: { x: 150, y: 230 },       // 10.335 (Au Gr/Tm)
-    resultadoOzTc: { x: 180, y: 230 },       // 0.301 (Au Oz/Tc)
+    // Resultados finales en la tabla pequeña (centrados)
+    resultadoGrTm: { x: 133, y: 217 },       // 10.335 (Au Gr/Tm)
+    resultadoOzTc: { x: 175, y: 217 },       // 0.301 (Au Oz/Tc)
     
-    // Fecha final del documento
-    fechaFinal: { x: 120, y: 260 },          // domingo, 21 de Septiembre de 2025
+    // Fecha final del documento (centrada)
+    fechaFinal: { x: 105, y: 245 },          // domingo, 21 de Septiembre de 2025
     
-    // Observaciones (si las hay)
-    observaciones: { x: 20, y: 280 }         // Texto libre adicional
+    // Observaciones (si las hay, debajo de "OBSERVACIONES")
+    observaciones: { x: 30, y: 267 }         // Texto libre adicional
 };
 
 // Variables globales
@@ -184,12 +184,6 @@ async function generarCertificadoPDF() {
             doc.addImage(img, 'JPEG', 0, 0, 210, 297);
             console.log('✅ Imagen de fondo agregada al PDF');
             
-            // Agregar texto de prueba para verificar que funciona
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(16);
-            doc.setTextColor(255, 0, 0); // Rojo para que sea visible
-            doc.text('PRUEBA - CERTIFICADO LABMETAL SAC', 20, 20);
-            
             // Agregar todos los textos usando la función especializada
             agregarTextosCertificado(doc, datos);
             
@@ -264,23 +258,26 @@ function agregarTextosCertificado(doc, datos) {
     console.log('📝 Agregando textos al certificado...');
     console.log('Datos recibidos:', datos);
     
-    // Configurar fuente base - Arial o Helvetica, tamaño 9
+    // Configurar fuente base - Helvetica, tamaño 9, color negro (igual al certificado original)
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0); // Negro
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0); // Negro siempre
     
     // === INFORMACIÓN DEL CLIENTE ===
     if (datos.cliente) {
+        doc.setTextColor(0, 0, 0); // Negro
         console.log(`Agregando cliente: "${datos.cliente}" en (${COORDENADAS_CERTIFICADO.cliente.x}, ${COORDENADAS_CERTIFICADO.cliente.y})`);
         doc.text(datos.cliente.toUpperCase(), COORDENADAS_CERTIFICADO.cliente.x, COORDENADAS_CERTIFICADO.cliente.y);
     }
     
     if (datos.referencia) {
+        doc.setTextColor(0, 0, 0); // Negro
         console.log(`Agregando referencia: "${datos.referencia}" en (${COORDENADAS_CERTIFICADO.referencia.x}, ${COORDENADAS_CERTIFICADO.referencia.y})`);
         doc.text(datos.referencia, COORDENADAS_CERTIFICADO.referencia.x, COORDENADAS_CERTIFICADO.referencia.y);
     }
     
     if (datos.solicitud) {
+        doc.setTextColor(0, 0, 0); // Negro
         console.log(`Agregando solicitud: "${datos.solicitud}" en (${COORDENADAS_CERTIFICADO.solicitudAnalisis.x}, ${COORDENADAS_CERTIFICADO.solicitudAnalisis.y})`);
         doc.text(datos.solicitud, COORDENADAS_CERTIFICADO.solicitudAnalisis.x, COORDENADAS_CERTIFICADO.solicitudAnalisis.y);
     }
@@ -328,9 +325,10 @@ function agregarTextosCertificado(doc, datos) {
     }
     
     // === RESULTADOS FINALES ===
-    // Configurar fuente en negrita para resultados finales
+    // Mantener fuente normal para resultados finales (igual al certificado original)
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0); // Asegurar que sea negro
     
     if (datos.resultadoGrTm) {
         console.log(`Agregando resultado Gr/Tm: "${datos.resultadoGrTm}" en (${COORDENADAS_CERTIFICADO.resultadoGrTm.x}, ${COORDENADAS_CERTIFICADO.resultadoGrTm.y})`);
@@ -345,6 +343,7 @@ function agregarTextosCertificado(doc, datos) {
     // Volver a fuente normal
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0); // Asegurar que sea negro
     
     // === FECHA FINAL ===
     if (datos.fechaFinal) {
@@ -354,7 +353,9 @@ function agregarTextosCertificado(doc, datos) {
     
     // === OBSERVACIONES ADICIONALES ===
     if (datos.observaciones && datos.observaciones.trim() !== '') {
+        doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
+        doc.setTextColor(0, 0, 0); // Negro
         const observacionesTexto = doc.splitTextToSize(datos.observaciones, 150);
         console.log(`Agregando observaciones: "${datos.observaciones}" en (${COORDENADAS_CERTIFICADO.observaciones.x}, ${COORDENADAS_CERTIFICADO.observaciones.y})`);
         doc.text(observacionesTexto, COORDENADAS_CERTIFICADO.observaciones.x, COORDENADAS_CERTIFICADO.observaciones.y);
