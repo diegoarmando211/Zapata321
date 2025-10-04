@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LABMETAL SAC - Generador de Certificados</title>
+    <meta name="description" content="Sistema de generación de certificados de análisis para LABMETAL SAC">
+    <link rel="stylesheet" href="./certificado-style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Firebase Auth para seguridad -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC8ZYyutzFmGzO-O9KYIANQZvl2BhQvB20",
+            authDomain: "certificados-a7d6f.firebaseapp.com",
+            projectId: "certificados-a7d6f",
+            storageBucket: "certificados-a7d6f.firebasestorage.app",
+            messagingSenderId: "414462338444",
+            appId: "1:414462338444:web:869e510428b2140d7762a9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Verificar autenticación
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                // Usuario no autenticado, redirigir al login
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Función para cerrar sesión
+        window.cerrarSesion = function() {
+            signOut(auth).then(() => {
+                window.location.href = 'index.html';
+            });
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <i class="fas fa-microscope"></i>
+                    <h1>LABMETAL SAC</h1>
+                    <p>Sistema de Certificados de Análisis</p>
+                </div>
+                <button onclick="cerrarSesion()" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Panel de Control -->
+            <div class="control-panel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-file-alt"></i> Generar Certificado</h2>
+                </div>
+
+                <!-- Estado del sistema -->
+                <div id="system-status" class="status-info">
+                    <i class="fas fa-check-circle"></i> Sistema listo
+                </div>
+
+                <!-- Formulario de datos -->
+                <form id="certificateForm" class="certificate-form">
+                    <!-- Información del Cliente -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-user"></i> Información del Cliente</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cliente">Cliente:</label>
+                                <input type="text" id="cliente" name="cliente" placeholder="Ej: JESÚS OTINIANO" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="referencia">Referencia:</label>
+                                <input type="text" id="referencia" name="referencia" placeholder="Ej: A - 03-10-2025">
+                            </div>
+                            <div class="form-group">
+                                <label for="solicitud">Solicitud de Análisis:</label>
+                                <input type="text" id="solicitud" name="solicitud" placeholder="Ej: Duplicado - Au">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información de la Muestra -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-vial"></i> Información de la Muestra</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="material">Material:</label>
+                                <select id="material" name="material">
+                                    <option value="">Seleccionar material...</option>
+                                    <option value="Mineral Óxido">Mineral Óxido</option>
+                                    <option value="Mineral Sulfurado">Mineral Sulfurado</option>
+                                    <option value="Concentrado">Concentrado</option>
+                                    <option value="Relaves">Relaves</option>
+                                    <option value="Suelo">Suelo</option>
+                                    <option value="Roca">Roca</option>
+                                    <option value="Agua">Agua</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="codigo">Código:</label>
+                                <input type="text" id="codigo" name="codigo" placeholder="Ej: MO" maxlength="5">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="condiciones">Condiciones y Características:</label>
+                                <input type="text" id="condiciones" name="condiciones" placeholder="Ej: Muestra en bolsa con precinto">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="fechaRecepcion">Fecha de Recepción:</label>
+                                <input type="date" id="fechaRecepcion" name="fechaRecepcion">
+                            </div>
+                            <div class="form-group">
+                                <label for="humedad">% H₂O:</label>
+                                <input type="text" id="humedad" name="humedad" placeholder="—">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información del Laboratorio -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-flask"></i> Datos del Laboratorio</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="numeroLab">N° LAB:</label>
+                                <input type="text" id="numeroLab" name="numeroLab" placeholder="Ej: MO">
+                            </div>
+                            <div class="form-group">
+                                <label for="descripcion">Descripción:</label>
+                                <input type="text" id="descripcion" name="descripcion" placeholder="Ej: RULY">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resultados -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-chart-line"></i> Resultados</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="resultadoGrTm">Resultado Au (Gr/Tm):</label>
+                                <input type="number" id="resultadoGrTm" name="resultadoGrTm" step="0.001" placeholder="Ej: 3.800">
+                            </div>
+                            <div class="form-group">
+                                <label for="resultadoOzTc">Resultado Au (Oz/Tc):</label>
+                                <input type="number" id="resultadoOzTc" name="resultadoOzTc" step="0.001" placeholder="Ej: 0.111">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información Final -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-calendar-check"></i> Información Final</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="fechaFinal">Fecha Final:</label>
+                                <input type="date" id="fechaFinal" name="fechaFinal">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="observaciones">Observaciones:</label>
+                                <textarea id="observaciones" name="observaciones" rows="3" placeholder="Observaciones adicionales..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="form-actions">
+                        <button type="button" onclick="generarCertificadoPDF()" class="btn btn-primary">
+                            <i class="fas fa-file-pdf"></i> Generar Certificado PDF
+                        </button>
+                        <button type="button" onclick="limpiarFormulario()" class="btn btn-secondary">
+                            <i class="fas fa-broom"></i> Limpiar Formulario
+                        </button>
+                        <button type="button" onclick="cargarDatosEjemplo()" class="btn btn-info">
+                            <i class="fas fa-magic"></i> Cargar Ejemplo
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Vista Previa -->
+            <div class="preview-panel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-eye"></i> Vista Previa</h2>
+                </div>
+                <div class="preview-content">
+                    <div id="preview-info" class="preview-info">
+                        <p>Complete el formulario para ver la vista previa del certificado</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // Configuración inicial
+        window.addEventListener('load', function() {
+            // Establecer fechas por defecto
+            const hoy = new Date();
+            document.getElementById('fechaRecepcion').value = hoy.toISOString().split('T')[0];
+            document.getElementById('fechaFinal').value = hoy.toISOString().split('T')[0];
+            
+            // Auto-generar referencia
+            const dia = hoy.getDate().toString().padStart(2, '0');
+            const mes = (hoy.getMonth() + 1).toString().padStart(2, '0');
+            const año = hoy.getFullYear();
+            document.getElementById('referencia').value = `A - ${dia}-${mes}-${año}`;
+            
+            // Verificar jsPDF
+            setTimeout(() => {
+                const status = document.getElementById('system-status');
+                if (typeof window.jsPDF !== 'undefined') {
+                    status.innerHTML = '<i class="fas fa-check-circle"></i> Sistema listo - jsPDF cargado';
+                    status.className = 'status-info success';
+                } else {
+                    status.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Advertencia: jsPDF no cargado';
+                    status.className = 'status-info warning';
+                }
+            }, 1000);
+        });
+    </script>
+    <script src="./certificado-script.js"></script>
+</body>
+</html>
