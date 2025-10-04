@@ -8,36 +8,37 @@
 // ===================================
 
 // Configuración de coordenadas basadas en el certificado real de LABMETAL SAC
+// Coordenadas ajustadas para formato A4 (210mm x 297mm)
 const COORDENADAS_CERTIFICADO = {
     // Información del cliente - parte superior
-    cliente: { x: 330, y: 77 },              // FERNANDO LOYOLA
-    referencia: { x: 330, y: 93 },           // A - 20-09-2025  
-    solicitudAnalisis: { x: 330, y: 109 },   // Newmont - Au
+    cliente: { x: 120, y: 60 },              // FERNANDO LOYOLA
+    referencia: { x: 120, y: 75 },           // A - 20-09-2025  
+    solicitudAnalisis: { x: 120, y: 90 },    // Newmont - Au
     
     // Sección RECEPCION DE MUESTRA
-    material: { x: 330, y: 138 },            // Polveado Óxido
-    codigo: { x: 330, y: 154 },              // PO
-    condiciones: { x: 330, y: 170 },         // Muestra en Bolsa Cerrada
-    fechaRecepcion: { x: 330, y: 186 },      // sábado, 20 de Septiembre de 2025
-    humedad: { x: 350, y: 202 },             // % H₂O (vacío o valor)
+    material: { x: 120, y: 120 },            // Polveado Óxido
+    codigo: { x: 120, y: 135 },              // PO
+    condiciones: { x: 120, y: 150 },         // Muestra en Bolsa Cerrada
+    fechaRecepcion: { x: 120, y: 165 },      // sábado, 20 de Septiembre de 2025
+    humedad: { x: 120, y: 180 },             // % H₂O (vacío o valor)
     
     // Tabla de resultados - Código y Descripción
-    codigoTabla: { x: 147, y: 233 },         // PO (en la tabla)
-    descripcionTabla: { x: 299, y: 233 },   // ELIO
+    codigoTabla: { x: 50, y: 210 },          // PO (en la tabla)
+    descripcionTabla: { x: 100, y: 210 },    // ELIO
     
     // Resultados en la tabla principal
-    resultadoMalla150Mas: { x: 470, y: 233 }, // 2.011 (MALLA + 150 Au)
-    resultadoMalla150Menos: { x: 545, y: 233 }, // 8.324 (MALLA - 150 Au)
+    resultadoMalla150Mas: { x: 150, y: 210 }, // 2.011 (MALLA + 150 Au)
+    resultadoMalla150Menos: { x: 180, y: 210 }, // 8.324 (MALLA - 150 Au)
     
     // Resultados finales en la tabla pequeña
-    resultadoGrTm: { x: 470, y: 266 },       // 10.335 (Au Gr/Tm)
-    resultadoOzTc: { x: 545, y: 266 },       // 0.301 (Au Oz/Tc)
+    resultadoGrTm: { x: 150, y: 230 },       // 10.335 (Au Gr/Tm)
+    resultadoOzTc: { x: 180, y: 230 },       // 0.301 (Au Oz/Tc)
     
     // Fecha final del documento
-    fechaFinal: { x: 417, y: 293 },          // domingo, 21 de Septiembre de 2025
+    fechaFinal: { x: 120, y: 260 },          // domingo, 21 de Septiembre de 2025
     
     // Observaciones (si las hay)
-    observaciones: { x: 50, y: 310 }         // Texto libre adicional
+    observaciones: { x: 20, y: 280 }         // Texto libre adicional
 };
 
 // Variables globales
@@ -75,13 +76,33 @@ async function cargarPlantilla() {
 }
 
 /**
- * Verificar que jsPDF esté disponible
+ * Verificar que jsPDF esté disponible y funcional
  */
 function verificarJsPDF() {
+    // Verificar que existe la variable global
     if (typeof window.jsPDF === 'undefined') {
         throw new Error('jsPDF no está disponible. Verifica tu conexión a internet.');
     }
-    return true;
+    
+    // Verificar que se puede instanciar
+    try {
+        const { jsPDF } = window.jsPDF;
+        if (typeof jsPDF !== 'function') {
+            throw new Error('jsPDF no es una función válida.');
+        }
+        
+        // Prueba de creación rápida para verificar que funciona
+        const testDoc = new jsPDF();
+        if (!testDoc || typeof testDoc.save !== 'function') {
+            throw new Error('jsPDF no se puede instanciar correctamente.');
+        }
+        
+        console.log('✅ jsPDF verificado y funcional');
+        return true;
+    } catch (error) {
+        console.error('❌ Error verificando jsPDF:', error);
+        throw new Error(`jsPDF no funciona correctamente: ${error.message}`);
+    }
 }
 
 /**
@@ -112,116 +133,85 @@ window.forzarRecargaJsPDF = function() {
 // ===================================
 
 /**
- * Función principal para generar el certificado PDF
+ * Función principal para generar el certificado PDF - VERSIÓN SIMPLIFICADA
  */
 async function generarCertificadoPDF() {
+    console.log('🔄 Iniciando generación simplificada de PDF...');
+    
     try {
-        mostrarNotificacion('🔄 Generando certificado PDF...', 'info');
+        // 1. Verificación básica de jsPDF
+        let jsPDFClass = null;
         
-        // 1. Verificar jsPDF con reintentos
-        let jsPDFDisponible = false;
-        let intentos = 0;
-        const maxIntentos = 3;
-        
-        while (!jsPDFDisponible && intentos < maxIntentos) {
-            try {
-                verificarJsPDF();
-                jsPDFDisponible = true;
-            } catch (error) {
-                intentos++;
-                console.warn(`⚠️ Intento ${intentos} de verificar jsPDF falló:`, error.message);
-                
-                if (intentos < maxIntentos) {
-                    mostrarNotificacion(`🔄 Reintentando cargar jsPDF (${intentos}/${maxIntentos})...`, 'info');
-                    
-                    // Intentar recargar jsPDF
-                    if (typeof window.verificarJsPDF === 'function') {
-                        window.verificarJsPDF();
-                        // Esperar un poco antes del siguiente intento
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                    }
-                } else {
-                    throw new Error('jsPDF no está disponible después de múltiples intentos');
-                }
-            }
+        // Buscar jsPDF en todas las formas posibles
+        if (window.jsPDF && typeof window.jsPDF.jsPDF === 'function') {
+            jsPDFClass = window.jsPDF.jsPDF;
+            console.log('✅ jsPDF encontrado en window.jsPDF.jsPDF');
+        } else if (window.jsPDF && typeof window.jsPDF === 'function') {
+            jsPDFClass = window.jsPDF;
+            console.log('✅ jsPDF encontrado en window.jsPDF');
+        } else if (typeof jsPDF === 'function') {
+            jsPDFClass = jsPDF;
+            console.log('✅ jsPDF encontrado globalmente');
+        } else {
+            throw new Error('jsPDF no encontrado - verifique que esté cargado correctamente');
         }
         
         // 2. Obtener datos del formulario
         const datos = obtenerDatosFormulario();
+        console.log('✅ Datos del formulario obtenidos:', datos);
         
-        // 3. Validar datos requeridos
-        if (!validarDatos(datos)) {
+        // 3. Validar datos mínimos
+        if (!datos.cliente) {
+            mostrarNotificacion('❌ Por favor ingrese el nombre del cliente', 'error');
             return;
         }
         
-        // 4. Cargar plantilla
-        if (!plantillaBase64) {
-            mostrarNotificacion('📷 Cargando plantilla...', 'info');
-            plantillaBase64 = await cargarPlantilla();
-        }
+        mostrarNotificacion('🔄 Creando documento PDF...', 'info');
         
-        // 5. Crear PDF
-        const { jsPDF } = window.jsPDF;
-        const doc = new jsPDF('p', 'mm', 'a4'); // Formato A4 vertical
+        // 4. Crear documento PDF
+        const doc = new jsPDFClass('p', 'mm', 'a4');
+        console.log('✅ Documento PDF creado');
         
-        // 6. Agregar la plantilla como fondo
-        doc.addImage(
-            plantillaBase64, 
-            'JPEG', 
-            0, 0, 
-            210, 297  // Tamaño A4 en mm
-        );
+        // 5. Cargar imagen de fondo
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
         
-        // 7. Agregar textos sobre la plantilla
-        agregarTextosCertificado(doc, datos);
+        img.onload = function() {
+            console.log('✅ Imagen cargada, procesando PDF...');
+            console.log('Dimensiones de la imagen:', img.width, 'x', img.height);
+            
+            // Agregar imagen de fondo ajustada al tamaño A4
+            doc.addImage(img, 'JPEG', 0, 0, 210, 297);
+            console.log('✅ Imagen de fondo agregada al PDF');
+            
+            // Agregar texto de prueba para verificar que funciona
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.setTextColor(255, 0, 0); // Rojo para que sea visible
+            doc.text('PRUEBA - CERTIFICADO LABMETAL SAC', 20, 20);
+            
+            // Agregar todos los textos usando la función especializada
+            agregarTextosCertificado(doc, datos);
+            
+            // Descargar PDF
+            const nombreArchivo = `Certificado_${datos.cliente.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(nombreArchivo);
+            
+            console.log('✅ PDF generado y descargado exitosamente');
+            mostrarNotificacion('✅ Certificado generado correctamente', 'success');
+        };
         
-        // 8. Descargar el PDF
-        const nombreArchivo = `Certificado_${datos.cliente.replace(/\s+/g, '_')}.pdf`;
-        doc.save(nombreArchivo);
+        img.onerror = function() {
+            console.error('❌ Error cargando imagen de plantilla');
+            mostrarNotificacion('❌ Error: No se pudo cargar la plantilla del certificado', 'error');
+        };
         
-        mostrarNotificacion('✅ Certificado generado correctamente', 'success');
-        actualizarVistaPrevia(datos);
+        // Cargar la imagen
+        img.src = 'IMG/certificado.jpg?' + Date.now();
         
     } catch (error) {
-        console.error('❌ Error generando certificado:', error);
-        
-        // Mensaje de error más específico
-        let mensajeError = error.message;
-        if (error.message.includes('jsPDF')) {
-            mensajeError = 'No se pudo cargar la librería jsPDF. Verifica tu conexión a internet.';
-        } else if (error.message.includes('plantilla')) {
-            mensajeError = 'No se pudo cargar la plantilla del certificado.';
-        }
-        
-        mostrarNotificacion(`❌ Error: ${mensajeError}`, 'error');
-        
-        // Ofrecer alternativas
-        const opciones = [
-            '1. Verificar jsPDF y reintentar',
-            '2. Generar archivo de texto',
-            '3. Cancelar'
-        ].join('\n');
-        
-        const respuesta = prompt(
-            `Error generando PDF:\n${mensajeError}\n\n${opciones}\n\nElige una opción (1, 2 o 3):`
-        );
-        
-        switch (respuesta) {
-            case '1':
-                if (typeof window.verificarJsPDF === 'function') {
-                    window.verificarJsPDF();
-                    setTimeout(() => {
-                        mostrarNotificacion('🔄 Intenta generar el PDF nuevamente', 'info');
-                    }, 2000);
-                }
-                break;
-            case '2':
-                generarCertificadoTexto();
-                break;
-            default:
-                mostrarNotificacion('ℹ️ Operación cancelada', 'info');
-                break;
-        }
+        console.error('❌ Error completo en generarCertificadoPDF:', error);
+        mostrarNotificacion(`❌ Error: ${error.message}`, 'error');
     }
 }
 
@@ -271,21 +261,27 @@ function validarDatos(datos) {
  * Coordenadas ajustadas basadas en el certificado real
  */
 function agregarTextosCertificado(doc, datos) {
+    console.log('📝 Agregando textos al certificado...');
+    console.log('Datos recibidos:', datos);
+    
     // Configurar fuente base - Arial o Helvetica, tamaño 9
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(10);
     doc.setTextColor(0, 0, 0); // Negro
     
     // === INFORMACIÓN DEL CLIENTE ===
     if (datos.cliente) {
+        console.log(`Agregando cliente: "${datos.cliente}" en (${COORDENADAS_CERTIFICADO.cliente.x}, ${COORDENADAS_CERTIFICADO.cliente.y})`);
         doc.text(datos.cliente.toUpperCase(), COORDENADAS_CERTIFICADO.cliente.x, COORDENADAS_CERTIFICADO.cliente.y);
     }
     
     if (datos.referencia) {
+        console.log(`Agregando referencia: "${datos.referencia}" en (${COORDENADAS_CERTIFICADO.referencia.x}, ${COORDENADAS_CERTIFICADO.referencia.y})`);
         doc.text(datos.referencia, COORDENADAS_CERTIFICADO.referencia.x, COORDENADAS_CERTIFICADO.referencia.y);
     }
     
     if (datos.solicitud) {
+        console.log(`Agregando solicitud: "${datos.solicitud}" en (${COORDENADAS_CERTIFICADO.solicitudAnalisis.x}, ${COORDENADAS_CERTIFICADO.solicitudAnalisis.y})`);
         doc.text(datos.solicitud, COORDENADAS_CERTIFICADO.solicitudAnalisis.x, COORDENADAS_CERTIFICADO.solicitudAnalisis.y);
     }
     
@@ -312,9 +308,9 @@ function agregarTextosCertificado(doc, datos) {
     }
     
     // === TABLA DE RESULTADOS ===
-    // Código en la tabla (generalmente igual al código de arriba)
-    if (datos.codigo) {
-        doc.text(datos.codigo.toUpperCase(), COORDENADAS_CERTIFICADO.codigoTabla.x, COORDENADAS_CERTIFICADO.codigoTabla.y);
+    // Código en la tabla (usando numeroLab que corresponde al PO de la tabla)
+    if (datos.numeroLab) {
+        doc.text(datos.numeroLab.toUpperCase(), COORDENADAS_CERTIFICADO.codigoTabla.x, COORDENADAS_CERTIFICADO.codigoTabla.y);
     }
     
     // Descripción en la tabla
@@ -334,13 +330,15 @@ function agregarTextosCertificado(doc, datos) {
     // === RESULTADOS FINALES ===
     // Configurar fuente en negrita para resultados finales
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     
     if (datos.resultadoGrTm) {
+        console.log(`Agregando resultado Gr/Tm: "${datos.resultadoGrTm}" en (${COORDENADAS_CERTIFICADO.resultadoGrTm.x}, ${COORDENADAS_CERTIFICADO.resultadoGrTm.y})`);
         doc.text(datos.resultadoGrTm, COORDENADAS_CERTIFICADO.resultadoGrTm.x, COORDENADAS_CERTIFICADO.resultadoGrTm.y);
     }
     
     if (datos.resultadoOzTc) {
+        console.log(`Agregando resultado Oz/Tc: "${datos.resultadoOzTc}" en (${COORDENADAS_CERTIFICADO.resultadoOzTc.x}, ${COORDENADAS_CERTIFICADO.resultadoOzTc.y})`);
         doc.text(datos.resultadoOzTc, COORDENADAS_CERTIFICADO.resultadoOzTc.x, COORDENADAS_CERTIFICADO.resultadoOzTc.y);
     }
     
@@ -358,8 +356,11 @@ function agregarTextosCertificado(doc, datos) {
     if (datos.observaciones && datos.observaciones.trim() !== '') {
         doc.setFontSize(8);
         const observacionesTexto = doc.splitTextToSize(datos.observaciones, 150);
+        console.log(`Agregando observaciones: "${datos.observaciones}" en (${COORDENADAS_CERTIFICADO.observaciones.x}, ${COORDENADAS_CERTIFICADO.observaciones.y})`);
         doc.text(observacionesTexto, COORDENADAS_CERTIFICADO.observaciones.x, COORDENADAS_CERTIFICADO.observaciones.y);
     }
+    
+    console.log('✅ Textos agregados completamente al certificado');
 }
 
 // ===================================

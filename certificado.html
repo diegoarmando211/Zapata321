@@ -273,20 +273,43 @@
             script.onload = () => {
                 // Esperar un poco para que jsPDF se inicialice
                 setTimeout(() => {
-                    if (typeof window.jsPDF !== 'undefined' || typeof window.jspdf !== 'undefined') {
-                        // Normalizar la referencia global
-                        if (typeof window.jsPDF === 'undefined' && typeof window.jspdf !== 'undefined') {
-                            window.jsPDF = window.jspdf.jsPDF;
-                        }
-                        
-                        jsPDFLoaded = true;
-                        console.log(`✅ jsPDF cargado exitosamente desde: ${jsPDFSources[sourceIndex]}`);
-                        actualizarEstadoSistema('success', 'Sistema listo - jsPDF cargado');
-                    } else {
-                        console.warn(`⚠️ Script cargado pero jsPDF no disponible desde: ${jsPDFSources[sourceIndex]}`);
-                        setTimeout(() => cargarJsPDF(sourceIndex + 1), 500);
+                    let jsPDFDisponible = false;
+                    
+                    // Verificar múltiples formas en que jsPDF puede estar disponible
+                    if (typeof window.jsPDF !== 'undefined') {
+                        jsPDFDisponible = true;
+                        console.log('✅ jsPDF encontrado en window.jsPDF');
+                    } else if (typeof window.jspdf !== 'undefined') {
+                        window.jsPDF = window.jspdf;
+                        jsPDFDisponible = true;
+                        console.log('✅ jsPDF encontrado en window.jspdf y normalizado');
+                    } else if (typeof jsPDF !== 'undefined') {
+                        window.jsPDF = { jsPDF: jsPDF };
+                        jsPDFDisponible = true;
+                        console.log('✅ jsPDF encontrado globalmente y normalizado');
                     }
-                }, 500);
+                    
+                    // Verificar que realmente funciona
+                    if (jsPDFDisponible) {
+                        try {
+                            const { jsPDF: PDFConstructor } = window.jsPDF;
+                            if (typeof PDFConstructor === 'function') {
+                                const testDoc = new PDFConstructor();
+                                if (testDoc && typeof testDoc.save === 'function') {
+                                    jsPDFLoaded = true;
+                                    console.log(`✅ jsPDF verificado y funcional desde: ${jsPDFSources[sourceIndex]}`);
+                                    actualizarEstadoSistema('success', 'Sistema listo - jsPDF funcional');
+                                    return;
+                                }
+                            }
+                        } catch (error) {
+                            console.warn(`⚠️ jsPDF cargado pero no funcional: ${error.message}`);
+                        }
+                    }
+                    
+                    console.warn(`⚠️ Script cargado pero jsPDF no funcional desde: ${jsPDFSources[sourceIndex]}`);
+                    setTimeout(() => cargarJsPDF(sourceIndex + 1), 500);
+                }, 1000);
             };
             
             script.onerror = () => {
